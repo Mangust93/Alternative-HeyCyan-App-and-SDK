@@ -93,4 +93,52 @@
     <string name="synced_media_open_failed">Unable to open this media item.</string>
     <string name="synced_media_video_badge">VIDEO</string>
     <string name="auto_audio_speech_extend">Extend loop when speech detected (avoid cutting conversations)</string>
+
+    <!-- Bottom navigation (extracted from menu XML) -->
+    <string name="nav_chats">Chats</string>
+    <string name="nav_glasses">Glasses</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_plugins">Plugins</string>
+
+    <!-- Main screen – status / connection section -->
+    <string name="main_section_glasses_status">GLASSES STATUS</string>
+    <string name="main_label_battery">Battery: </string>
+    <string name="main_label_storage">Storage: </string>
+    <string name="main_section_connection">CONNECTION</string>
+    <string name="btn_scan">Scan</string>
+    <string name="btn_reconnect">Reconnect</string>
+    <string name="btn_disconnect">Disconnect</string>
+
+    <!-- Main screen – meeting capture -->
+    <string name="main_section_meeting_capture">MEETING CAPTURE</string>
+    <string name="btn_start">Start</string>
+    <string name="btn_stop">Stop</string>
+    <string name="main_label_timer">Timer:</string>
+    <string name="main_section_sync_progress">SYNC PROGRESS</string>
+    <string name="btn_stop_sync">Stop sync</string>
+
+    <!-- Main screen – media and AI sections -->
+    <string name="main_section_ai_assistant">AI ASSISTANT</string>
+    <string name="main_section_media_controls">MEDIA CONTROLS</string>
+    <string name="media_photo">Photo</string>
+    <string name="media_video">Video</string>
+    <string name="media_audio">Audio</string>
+
+    <!-- Recording banner (shared across screens) -->
+    <string name="recording_active">Recording active</string>
+
+    <!-- Chat list screen -->
+    <string name="chat_list_title">Chats</string>
+    <string name="chat_list_empty">No chats yet. Tap + to start.</string>
+    <string name="chat_list_hint_long_press">Long press a chat to delete it</string>
+
+    <!-- Recordings list screen -->
+    <string name="recordings_list_empty">No recordings yet. Start a meeting capture to create one.</string>
+
+    <!-- Device scan item -->
+    <string name="device_choose_type">Choose type</string>
+
+    <!-- Settings screen top header -->
+    <string name="settings_privacy_title">Privacy Settings</string>
+    <string name="settings_privacy_subtitle">Privacy-first defaults. Transcript storage is OFF by default.</string>
 </resources>

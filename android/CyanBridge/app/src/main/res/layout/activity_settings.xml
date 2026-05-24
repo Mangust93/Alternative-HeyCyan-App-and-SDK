@@ -32,7 +32,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Recording active"
+                android:text="@string/recording_active"
                 android:textColor="@color/bg_dark"
                 android:textStyle="bold" />
 
@@ -40,7 +40,7 @@
                 android:id="@+id/btn_meeting_banner_stop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Stop"
+                android:text="@string/btn_stop"
                 android:backgroundTint="@color/bg_dark"
                 android:textColor="@color/danger" />
         </LinearLayout>
@@ -50,7 +50,7 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Privacy Settings"
+        android:text="@string/settings_privacy_title"
         android:textColor="@color/text_primary"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -63,7 +63,7 @@
         android:id="@+id/subtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Privacy-first defaults. Transcript storage is OFF by default."
+        android:text="@string/settings_privacy_subtitle"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:layout_marginTop="6dp"

@@ -33,7 +33,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Recording active"
+                android:text="@string/recording_active"
                 android:textColor="@color/bg_dark"
                 android:textStyle="bold" />
 
@@ -41,7 +41,7 @@
                 android:id="@+id/btn_meeting_banner_stop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Stop"
+                android:text="@string/btn_stop"
                 android:backgroundTint="@color/bg_dark"
                 android:textColor="@color/danger" />
         </LinearLayout>
@@ -76,7 +76,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="GLASSES STATUS"
+                    android:text="@string/main_section_glasses_status"
                     android:textColor="@color/cyan_accent"
                     android:textStyle="bold"
                     android:textSize="12sp"
@@ -138,7 +138,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Battery: "
+                            android:text="@string/main_label_battery"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
 
@@ -162,7 +162,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Storage: "
+                            android:text="@string/main_label_storage"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp" />
 
@@ -205,7 +205,7 @@
                 android:id="@+id/tv_transfer_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="SYNC PROGRESS"
+                android:text="@string/main_section_sync_progress"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp"
                 android:textStyle="bold"
@@ -249,7 +249,7 @@
                     android:id="@+id/btn_transfer_stop"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Stop sync"
+                    android:text="@string/btn_stop_sync"
                     android:textAllCaps="false"
                     android:backgroundTint="@color/card_bg"
                     android:textColor="@color/danger"
@@ -283,7 +283,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CONNECTION"
+                android:text="@string/main_section_connection"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp"
                 android:layout_marginBottom="8dp"/>
@@ -298,7 +298,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Scan"
+                    android:text="@string/btn_scan"
                     android:backgroundTint="@color/cyan_accent"
                     android:textColor="@color/bg_dark"/>
 
@@ -309,7 +309,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Reconnect"
+                    android:text="@string/btn_reconnect"
                     android:backgroundTint="@color/card_bg"
                     android:textColor="@color/cyan_accent"/>
             </LinearLayout>
@@ -318,7 +318,7 @@
                 android:id="@+id/btn_disconnect"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Disconnect"
+                android:text="@string/btn_disconnect"
                 android:backgroundTint="@color/card_bg"
                 android:textColor="@color/danger"/>
 
@@ -326,7 +326,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="MEETING CAPTURE"
+                android:text="@string/main_section_meeting_capture"
                 android:textColor="@color/cyan_accent"
                 android:textStyle="bold"
                 android:textSize="12sp"
@@ -343,7 +343,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Start"
+                    android:text="@string/btn_start"
                     android:backgroundTint="@color/cyan_accent"
                     android:textColor="@color/bg_dark" />
 
@@ -356,7 +356,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Stop"
+                    android:text="@string/btn_stop"
                     android:backgroundTint="@color/card_bg"
                     android:textColor="@color/danger" />
             </LinearLayout>
@@ -370,7 +370,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Timer:"
+                    android:text="@string/main_label_timer"
                     android:textColor="@color/text_secondary"
                     android:layout_gravity="center_vertical" />
 
@@ -407,7 +407,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="AI ASSISTANT"
+                    android:text="@string/main_section_ai_assistant"
                     android:textColor="@color/cyan_accent"
                     android:textStyle="bold"
                     android:textSize="12sp"
@@ -512,7 +512,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="MEDIA CONTROLS"
+                    android:text="@string/main_section_media_controls"
                     android:textColor="@color/text_secondary"
                     android:textSize="12sp"
                     android:layout_marginTop="16dp"
@@ -528,7 +528,7 @@
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="60dp"
-                        android:text="Photo"
+                        android:text="@string/media_photo"
                         android:backgroundTint="@color/card_bg"
                         android:textColor="@color/purple_200"/>
 
@@ -539,7 +539,7 @@
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="60dp"
-                        android:text="Video"
+                        android:text="@string/media_video"
                         android:backgroundTint="@color/card_bg"
                         android:textColor="@color/purple_200"/>
                 </LinearLayout>
@@ -555,7 +555,7 @@
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:text="Audio"
+                        android:text="@string/media_audio"
                         android:backgroundTint="@color/card_bg"
                         android:textColor="@color/purple_200"/>
 
