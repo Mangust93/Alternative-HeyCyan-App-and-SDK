@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+            Debug log diagnostics screen.
+
+            Shows the recent real diagnostic events captured by DebugLogStore and lets a
+            tester copy a compact diagnostic bundle to the clipboard.
+
+            exported=true is ONLY for manual launch via adb during testing:
+              adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.debug_log_tools.DebugLogActivity
+
+            IMPORTANT (release): before shipping a release build either
+              - disable this module:  ./gradlew :app:assembleDebug -PincludeDebugLogTools=false
+                (the module is wired as debugImplementation only, so release builds never
+                 include it — but keep this guarantee in mind), or
+              - set android:exported="false" here.
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.debug_log_tools.DebugLogActivity"
+            android:exported="true"
+            android:label="Debug Log Tools" />
+    </application>
+
+</manifest>

@@ -157,6 +157,16 @@ dependencies {
         logger.lifecycle("includePhoneTestTools=false; skipping :phone-test-tools dependency")
     }
 
+    // Optional debug-log diagnostics module.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeDebugLogTools=false
+    def includeDebugLogTools = providers.gradleProperty("includeDebugLogTools").orElse("true").get().toBoolean()
+    if (includeDebugLogTools) {
+        debugImplementation project(":debug-log-tools")
+    } else {
+        logger.lifecycle("includeDebugLogTools=false; skipping :debug-log-tools dependency")
+    }
+
     // Chapter 2 storage
     def room_version = "2.7.0"
     implementation "androidx.room:room-runtime:$room_version"

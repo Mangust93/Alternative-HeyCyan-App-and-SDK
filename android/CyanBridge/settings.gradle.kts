@@ -28,6 +28,10 @@ include(":moonshine-voice")
 // and only when the `includePhoneTestTools` Gradle property is true (default).
 include(":phone-test-tools")
 
+// Optional debug-log diagnostics. Wired into :app only as a debugImplementation and
+// only when the `includeDebugLogTools` Gradle property is true (default).
+include(":debug-log-tools")
+
 // HeyCyan Core - bundled as composite build for easy compilation
 val heycyanCoreDir = file("../../heycyan-core")
 if (heycyanCoreDir.exists()) {

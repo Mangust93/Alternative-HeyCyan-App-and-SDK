@@ -81,6 +81,7 @@ adb shell pm grant com.fersaiyan.cyanbridge android.permission.POST_NOTIFICATION
 4. **Chat** (`ChatThreadActivity`) — where the native automation fallback lands.
 5. **Settings** (`SettingsActivity`) — provider type, auto-audio, privacy.
 6. **Phone Test / Debug diagnostics** (debug-only, see §8) — fallback status check.
+7. **Debug Log Tools** (debug-only, see §13) — capture/copy a diagnostic bundle.
 
 ---
 
@@ -197,6 +198,10 @@ version, and whether Tasker was installed/enabled at the time.
 > The in-app **Settings → Send Debug Logs** dialog also collects a focused logcat and
 > uploads it to the relay if one is configured.
 
+> You can also open the **Debug Log Tools** screen (§13) and tap **Copy diagnostic
+> bundle** to grab a compact app + device + recent-events summary that pastes straight
+> into ChatGPT. This complements (does not replace) the full logcat above.
+
 ---
 
 ## 12. Optional `:phone-test-tools` module
@@ -245,3 +250,52 @@ adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.phone_te
 
 The `applicationId` stays `com.fersaiyan.cyanbridge`; only the activity's class moved
 to the `com.fersaiyan.cyanbridge.phone_test_tools` package.
+
+---
+
+## 13. Debug log tools module
+
+A second standalone, optional Android library module, `:debug-log-tools`, captures
+**real** diagnostic events to app-specific storage and renders them in a small debug
+screen. Its **Copy diagnostic bundle** button produces a compact text summary (app +
+device facts plus recent events) that pastes straight into ChatGPT. Like
+`:phone-test-tools`, it has **no** dependency on `:app`, never touches the real
+glasses/media/BLE/P2P flow, and is wired into `:app` as a **`debugImplementation` only**
+(never in release). Full details: `CLAUDE_DEBUG_LOG_TOOLS_REVIEW.md`.
+
+### Enable (default) / disable
+
+```bash
+# included by default
+./gradlew :app:assembleDebug --no-daemon --no-watch-fs --stacktrace
+
+# build without the module
+./gradlew :app:assembleDebug --no-daemon --no-watch-fs --stacktrace -PincludeDebugLogTools=false
+```
+
+### Open the screen (module included)
+
+```bash
+adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.debug_log_tools.DebugLogActivity
+```
+
+### Log file location
+
+```
+/data/data/com.fersaiyan.cyanbridge/files/debug-log-tools/debug-events.log
+```
+
+### Use during testing
+
+1. **Before the test:** open `DebugLogActivity` and tap **Add test log event**. Tap
+   **Refresh** and confirm the new event appears in the list — this verifies the log is
+   actually being written to disk.
+2. **Run the test** (glasses scan/connect, media, native automation fallback, §6–§9).
+3. **On a failure / error:** open `DebugLogActivity`, tap **Copy diagnostic bundle**,
+   and paste the bundle into ChatGPT (alongside the focused logcat from §11). Use
+   **Clear logs** between runs if you want a clean capture.
+
+> The module only records events explicitly written via `DebugLogStore.append(...)`. Out
+> of the box that means the events created on this screen (open / test / copy / clear);
+> wiring real subsystem call sites is a deliberate follow-up so the core flow stays
+> untouched for this test build.
