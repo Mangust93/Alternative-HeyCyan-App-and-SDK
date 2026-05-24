@@ -375,8 +375,11 @@ class AutoAudioCaptureService : Service() {
             return
         }
 
-        // Use the same pathway as the UI button: MainActivity handles the tasker command
-        // and triggers btnDataDownload -> startDataDownload.
+        // TODO(iteration-3): replace this ACTION_TASKER_COMMAND route with:
+        //   NativeAutomationEngine.handle(this, AutomationEvent.SyncThresholdReachedEvent(loopCount))
+        // The engine will dispatch TriggerP2pSyncAction, which MainActivity handles natively
+        // without relying on the Tasker intent-naming convention.
+        // Until then, the existing startActivity path continues to work unchanged.
         val intent = Intent(this, MainActivity::class.java).apply {
             action = MainActivity.actionTaskerCommand(packageName)
             putExtra(MainActivity.EXTRA_TASKER_COMMAND, "data_download")

@@ -277,6 +277,18 @@ class ChatThreadActivity : AppCompatActivity() {
             ?.takeIf { it.isNotBlank() }
             ?.let { binding.inputMessage.setText(it) }
 
+        // NativeAutomationEngine: attach image passed via intent.
+        val attachedImagePath = intent.getStringExtra(EXTRA_ATTACHED_IMAGE_PATH)
+        if (!attachedImagePath.isNullOrBlank() && File(attachedImagePath).exists()) {
+            pendingImagePaths += attachedImagePath
+        }
+
+        // NativeAutomationEngine: prefill prompt only when the input field is empty.
+        val initialPrompt = intent.getStringExtra(EXTRA_INITIAL_PROMPT)
+        if (!initialPrompt.isNullOrBlank() && binding.inputMessage.text.isNullOrBlank()) {
+            binding.inputMessage.setText(initialPrompt)
+        }
+
         setupBottomNavigation()
         refreshModelBadge("Ready")
         updateComposerForGenerationState()
@@ -2517,5 +2529,9 @@ class ChatThreadActivity : AppCompatActivity() {
         const val EXTRA_DAILY_FACTS_REVIEW = "daily_facts_review"
         const val EXTRA_DAILY_FACTS_DATE = "daily_facts_date"
         const val EXTRA_DAILY_FACTS_LOOKBACK_DAYS = "daily_facts_lookback_days"
+
+        // NativeAutomationEngine: image-flow extras
+        const val EXTRA_ATTACHED_IMAGE_PATH = "attached_image_path"
+        const val EXTRA_INITIAL_PROMPT = "initial_prompt"
     }
 }
