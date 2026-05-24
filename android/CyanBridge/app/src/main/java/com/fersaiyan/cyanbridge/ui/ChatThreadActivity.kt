@@ -277,17 +277,7 @@ class ChatThreadActivity : AppCompatActivity() {
             ?.takeIf { it.isNotBlank() }
             ?.let { binding.inputMessage.setText(it) }
 
-        // NativeAutomationEngine: attach image passed via intent.
-        val attachedImagePath = intent.getStringExtra(EXTRA_ATTACHED_IMAGE_PATH)
-        if (!attachedImagePath.isNullOrBlank() && File(attachedImagePath).exists()) {
-            pendingImagePaths += attachedImagePath
-        }
-
-        // NativeAutomationEngine: prefill prompt only when the input field is empty.
-        val initialPrompt = intent.getStringExtra(EXTRA_INITIAL_PROMPT)
-        if (!initialPrompt.isNullOrBlank() && binding.inputMessage.text.isNullOrBlank()) {
-            binding.inputMessage.setText(initialPrompt)
-        }
+        applyNativeAutomationExtras(intent)
 
         setupBottomNavigation()
         refreshModelBadge("Ready")
@@ -369,7 +359,24 @@ class ChatThreadActivity : AppCompatActivity() {
             adapter.submitList(emptyList())
             binding.tvDailyReviewQueueStatus.visibility = android.view.View.GONE
         }
+        applyNativeAutomationExtras(intent)
+        updatePendingAttachmentsUi()
         applyChatAppearance()
+    }
+
+    private fun applyNativeAutomationExtras(intent: Intent?) {
+        val attachedImagePath = intent?.getStringExtra(EXTRA_ATTACHED_IMAGE_PATH)
+        if (!attachedImagePath.isNullOrBlank() &&
+            File(attachedImagePath).exists() &&
+            attachedImagePath !in pendingImagePaths
+        ) {
+            pendingImagePaths += attachedImagePath
+        }
+
+        val initialPrompt = intent?.getStringExtra(EXTRA_INITIAL_PROMPT)
+        if (!initialPrompt.isNullOrBlank() && binding.inputMessage.text.isNullOrBlank()) {
+            binding.inputMessage.setText(initialPrompt)
+        }
     }
 
     private fun restoreDailyReviewConfigForCurrentThread() {

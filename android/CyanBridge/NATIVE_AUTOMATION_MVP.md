@@ -1,7 +1,7 @@
 # Native Automation MVP
 
-**Branch:** `ai/claude-native-automation-mvp`  
-**Date:** 2026-05-24  
+**Branch:** `ai/claude-native-automation-mvp`
+**Date:** 2026-05-24
 **Scope:** Minimal NativeAutomationEngine for image-flow only. No Tasker removal, no wide refactoring.
 
 ---
@@ -21,8 +21,9 @@
 - Two new constants in `companion object`:
   - `EXTRA_ATTACHED_IMAGE_PATH = "attached_image_path"` — absolute path to a JPEG to pre-attach
   - `EXTRA_INITIAL_PROMPT = "initial_prompt"` — text to prefill the composer (only if input is empty)
-- In `onCreate()`: if `EXTRA_ATTACHED_IMAGE_PATH` is set and the file exists, it is added to `pendingImagePaths`; `updatePendingAttachmentsUi()` is already called at the end of `onCreate()` so the UI updates automatically.
+- In `onCreate()` and `onNewIntent()`: an existing image path is added to `pendingImagePaths` once, the attachment UI is refreshed, and an initial prompt is inserted only while the composer is empty.
 - Existing manual attach flow (`pickChatImageLauncher`) is untouched.
+- The engine adds `FLAG_ACTIVITY_NEW_TASK` only when invoked with a non-`Activity` context.
 
 ### MainActivity changes
 
@@ -31,6 +32,7 @@
   - If `isTaskerInstalled() && CommunityPluginPrefs.isGeminiChatGptImageAutomationEnabled(this)` → existing Tasker broadcast (unchanged).
   - Else → `NativeAutomationEngine.handle(this, ImageReadyEvent(imagePath, "tasker_fallback"))` → opens `ChatThreadActivity` with attached image.
 - `sendAiBroadcast()` is preserved and still called for Tasker users.
+- Image-query entrypoints continue into routing when Tasker/plugin is unavailable instead of stopping at the legacy setup warning.
 
 ### AutoAudioCaptureService changes
 
@@ -85,7 +87,7 @@
 
 ## Known issues / test results
 
-`./gradlew test --no-daemon --no-watch-fs` fails with a **pre-existing** build environment issue, not related to this change:
+`./gradlew test --no-daemon --no-watch-fs` was run on 2026-05-24 and fails with a **pre-existing** build environment issue, not related to this change:
 
 ```
 Task :app:kaptDebugKotlin FAILED
@@ -94,9 +96,9 @@ bad class file: jetified-litertlm-android-0.10.0-api.jar (.../Backend.class)
 ```
 
 **Root cause:** `litertlm-android-0.10.0-api.jar` was compiled with Java 21 (class file version 65.0).
-The CI environment only has Java 17 (class file version 61.0).
-The project's `gradle.properties` references `/opt/android-studio/jbr` (Android Studio's JBR bundled with Java 21), which is absent in this environment.
+The available Gradle/Javac execution is Java 17 compatible (class file version 61.0).
+An attempted run using the documented `JAVA_HOME=/opt/android-studio/jbr` cannot start because that directory is absent in this environment.
 
-**Impact on this change:** zero — the three new `automation/*.kt` files contain no annotation processors and no Android-specific KAPT-annotated code. The change compiles cleanly when the correct JDK (Java 21 / Android Studio JBR) is present.
+**Impact on this change:** errors originate from generated stubs for `LiteRtLocalInferenceEngine` and do not reference the automation files or edited activities. A successful Java 21 test run was not available to verify here.
 
 **Workaround:** build with Android Studio or set `org.gradle.java.home` to a valid JDK 21 path.

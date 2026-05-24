@@ -1,5 +1,6 @@
 package com.fersaiyan.cyanbridge.automation
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -27,7 +28,9 @@ object NativeAutomationEngine {
         val intent = Intent(context, ChatThreadActivity::class.java).apply {
             putExtra(ChatThreadActivity.EXTRA_ATTACHED_IMAGE_PATH, event.imagePath)
             putExtra(ChatThreadActivity.EXTRA_INITIAL_PROMPT, "Tell me about this image")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        if (context !is Activity) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
     }

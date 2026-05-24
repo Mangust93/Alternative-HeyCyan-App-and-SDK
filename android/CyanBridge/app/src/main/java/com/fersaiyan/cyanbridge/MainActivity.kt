@@ -580,10 +580,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                         return@setOnClickListener
                     }
 
-                    if (maybeShowGeminiChatGptImageRequirementsWarning()) {
-                        return@setOnClickListener
-                    }
-
                     triggerCliRelayImageCaptureAndQuery()
                 }
 
@@ -4378,9 +4374,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                             if (unsupportedReason != null) {
                                 Toast.makeText(this@MainActivity, unsupportedReason, Toast.LENGTH_SHORT).show()
                                 speak(unsupportedReason)
-                                return@runOnUiThread
-                            }
-                            if (maybeShowGeminiChatGptImageRequirementsWarning()) {
                                 return@runOnUiThread
                             }
                             handleGlassesImageButtonPressed(
