@@ -32,6 +32,12 @@ include(":phone-test-tools")
 // only when the `includeDebugLogTools` Gradle property is true (default).
 include(":debug-log-tools")
 
+// Optional runtime-diagnostics. Auto-installs real runtime instrumentation (app start,
+// build/device facts, crashes, activity lifecycle) via a ContentProvider. Wired into
+// :app only as a debugImplementation and only when the `includeRuntimeDiagnosticsTools`
+// Gradle property is true (default).
+include(":runtime-diagnostics-tools")
+
 // HeyCyan Core - bundled as composite build for easy compilation
 val heycyanCoreDir = file("../../heycyan-core")
 if (heycyanCoreDir.exists()) {

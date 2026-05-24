@@ -167,6 +167,16 @@ dependencies {
         logger.lifecycle("includeDebugLogTools=false; skipping :debug-log-tools dependency")
     }
 
+    // Optional runtime-diagnostics module (auto-installs runtime instrumentation).
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeRuntimeDiagnosticsTools=false
+    def includeRuntimeDiagnosticsTools = providers.gradleProperty("includeRuntimeDiagnosticsTools").orElse("true").get().toBoolean()
+    if (includeRuntimeDiagnosticsTools) {
+        debugImplementation project(":runtime-diagnostics-tools")
+    } else {
+        logger.lifecycle("includeRuntimeDiagnosticsTools=false; skipping :runtime-diagnostics-tools dependency")
+    }
+
     // Chapter 2 storage
     def room_version = "2.7.0"
     implementation "androidx.room:room-runtime:$room_version"

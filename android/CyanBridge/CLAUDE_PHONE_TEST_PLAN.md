@@ -82,6 +82,7 @@ adb shell pm grant com.fersaiyan.cyanbridge android.permission.POST_NOTIFICATION
 5. **Settings** (`SettingsActivity`) — provider type, auto-audio, privacy.
 6. **Phone Test / Debug diagnostics** (debug-only, see §8) — fallback status check.
 7. **Debug Log Tools** (debug-only, see §13) — capture/copy a diagnostic bundle.
+8. **Runtime Diagnostics** (debug-only, see §14) — auto-captured runtime events bundle.
 
 ---
 
@@ -299,3 +300,59 @@ adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.debug_lo
 > of the box that means the events created on this screen (open / test / copy / clear);
 > wiring real subsystem call sites is a deliberate follow-up so the core flow stays
 > untouched for this test build.
+
+---
+
+## 14. Runtime diagnostics tools module
+
+A third standalone, optional Android library module, `:runtime-diagnostics-tools`,
+**auto-installs** lightweight runtime instrumentation (via a `ContentProvider`, with no
+`:app` code change) and captures **real** runtime events to app-specific storage:
+**app start** + build/device facts, **uncaught crashes** (recorded, then delegated to the
+normal crash handler), and **activity lifecycle** transitions. Its **Copy runtime
+diagnostic bundle** button produces a compact text summary that pastes straight into
+ChatGPT. Like the other diagnostics modules it has **no** dependency on `:app`, never
+touches the real glasses/media/BLE/P2P flow or Moonshine, and is wired into `:app` as a
+**`debugImplementation` only** (never in release). Full details:
+`CLAUDE_RUNTIME_DIAGNOSTICS_TOOLS_REVIEW.md`.
+
+### Enable (default) / disable
+
+```bash
+# included by default (auto-installs at process startup)
+./gradlew :app:assembleDebug --no-daemon --no-watch-fs --stacktrace
+
+# build without the module
+./gradlew :app:assembleDebug --no-daemon --no-watch-fs --stacktrace -PincludeRuntimeDiagnosticsTools=false
+```
+
+### Open the screen (module included)
+
+```bash
+adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.runtime_diagnostics_tools.RuntimeDiagnosticsActivity
+```
+
+### Log file location
+
+```
+/data/data/com.fersaiyan.cyanbridge/files/runtime-diagnostics/runtime-events.log
+```
+
+### Use during testing
+
+1. **Before the test:** open `RuntimeDiagnosticsActivity`. Confirm the status reads
+   **INSTALLED (auto-init)** and that the `APP` start + build/device events are already
+   present (they are written automatically at process start). Tap **Add heartbeat event**,
+   then **Refresh**, and confirm the heartbeat appears — this verifies the log is actually
+   being written to disk.
+2. **Run the test** (glasses scan/connect, media, native automation fallback, §6–§9). The
+   module records activity lifecycle transitions automatically as you navigate.
+3. **After a crash / hang:** if the app relaunches, open `RuntimeDiagnosticsActivity` and
+   tap **Copy runtime diagnostic bundle**, then paste it into ChatGPT (alongside the
+   focused logcat from §11). A crash leaves a `CRASH` line with the exception class,
+   message and top frame; a hang/ANR leaves the last lifecycle events before it froze. Use
+   **Clear logs** between runs for a clean capture.
+
+> Crashes and lifecycle are captured automatically — no app call sites are added. Deeper
+> subsystem events (BLE/media/P2P/SDK) are intentionally out of scope so the core flow
+> stays untouched for this test build.

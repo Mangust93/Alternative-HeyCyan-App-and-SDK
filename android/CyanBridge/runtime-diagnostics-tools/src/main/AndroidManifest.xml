@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+            Auto-init provider.
+
+            A ContentProvider is created very early in the app process startup (before
+            Application.onCreate returns control to the first activity), so it lets this
+            module install its runtime instrumentation WITHOUT any change to :app code.
+            RuntimeDiagnosticsInitProvider.onCreate() simply calls
+            RuntimeDiagnostics.install(context) and is otherwise a no-op provider.
+
+            exported=false: nothing outside the app may bind to it. The authority is
+            scoped to the real applicationId so two installs never collide.
+        -->
+        <provider
+            android:name="com.fersaiyan.cyanbridge.runtime_diagnostics_tools.RuntimeDiagnosticsInitProvider"
+            android:authorities="${applicationId}.runtime-diagnostics-init"
+            android:exported="false"
+            android:initOrder="100" />
+
+        <!--
+            Runtime diagnostics screen.
+
+            Shows module status and the recent REAL runtime events captured by
+            RuntimeDiagnosticsStore (app start, build/device facts, crashes, activity
+            lifecycle) and lets a tester copy a compact diagnostic bundle to the clipboard.
+
+            exported=true is ONLY for manual launch via adb during testing:
+              adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.runtime_diagnostics_tools.RuntimeDiagnosticsActivity
+
+            IMPORTANT (release): before shipping a release build either
+              - disable this module:  ./gradlew :app:assembleDebug -PincludeRuntimeDiagnosticsTools=false
+                (the module is wired as debugImplementation only, so release builds never
+                 include it — but keep this guarantee in mind), or
+              - set android:exported="false" here.
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.runtime_diagnostics_tools.RuntimeDiagnosticsActivity"
+            android:exported="true"
+            android:label="Runtime Diagnostics" />
+    </application>
+
+</manifest>
