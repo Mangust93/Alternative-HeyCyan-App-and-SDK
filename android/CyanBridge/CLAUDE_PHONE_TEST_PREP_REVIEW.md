@@ -7,6 +7,21 @@ phone-with-glasses run, without Tasker/AutoInput and without the Moonshine runti
 
 ---
 
+> **Update (2026-05-24, branch `ai/claude-modular-phone-test-tools`):** the diagnostics
+> screen described below has since been **extracted out of `:app` into a separate,
+> optional Android library module, `:phone-test-tools`**. It is now wired into `:app`
+> as a `debugImplementation` only and gated behind the `includePhoneTestTools` Gradle
+> property (default `true`); disable with `-PincludePhoneTestTools=false`. The activity
+> moved to the `com.fersaiyan.cyanbridge.phone_test_tools` package and is decoupled from
+> app internals (it reads SharedPreferences directly, probes Moonshine via reflection,
+> and opens chat via an explicit intent rather than calling `NativeAutomationEngine`).
+> The adb launch command is now
+> `adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.phone_test_tools.PhoneTestDiagnosticsActivity`.
+> See `CLAUDE_MODULAR_PHONE_TEST_TOOLS_REVIEW.md` for that follow-up work. The notes
+> below describe the original in-app implementation.
+
+---
+
 ## What changed
 
 Minimal, additive, isolated changes only. No existing screen, view model, or

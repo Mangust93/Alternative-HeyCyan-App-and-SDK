@@ -147,6 +147,16 @@ dependencies {
     // Legacy offline transcription fallback (Vosk) - kept for now until Moonshine is fully wired
     implementation "com.alphacephei:vosk-android:0.3.47"
 
+    // Optional phone-test / debug diagnostics module.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludePhoneTestTools=false
+    def includePhoneTestTools = providers.gradleProperty("includePhoneTestTools").orElse("true").get().toBoolean()
+    if (includePhoneTestTools) {
+        debugImplementation project(":phone-test-tools")
+    } else {
+        logger.lifecycle("includePhoneTestTools=false; skipping :phone-test-tools dependency")
+    }
+
     // Chapter 2 storage
     def room_version = "2.7.0"
     implementation "androidx.room:room-runtime:$room_version"

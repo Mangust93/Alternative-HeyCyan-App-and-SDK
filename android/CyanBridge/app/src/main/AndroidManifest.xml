@@ -155,10 +155,11 @@
             android:exported="false"
             android:label="Transcription Debug" />
 
-        <activity
-            android:name=".ui.debug.PhoneTestDiagnosticsActivity"
-            android:exported="true"
-            android:label="Phone Test / Debug" />
+        <!--
+            PhoneTestDiagnosticsActivity now lives in the optional :phone-test-tools
+            module and is contributed via its own manifest (debugImplementation only).
+            Disable with: ./gradlew :app:assembleDebug -PincludePhoneTestTools=false
+        -->
 
         <activity
             android:name=".ui.notes.NotesListActivity"

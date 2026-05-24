@@ -118,10 +118,12 @@ Gemini/ChatGPT image plugin disabled). When an image is ready it opens
 
 ### Quick status + isolated test (debug diagnostics screen)
 
-A read-only diagnostics screen is included in the debug build. Launch it directly:
+A read-only diagnostics screen ships in the optional `:phone-test-tools` module
+(debug build only — see §12). When the module is included (the default), launch it
+directly:
 
 ```bash
-adb shell am start -n com.fersaiyan.cyanbridge/.ui.debug.PhoneTestDiagnosticsActivity
+adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.phone_test_tools.PhoneTestDiagnosticsActivity
 ```
 
 It shows, with no effect on the real glasses/media flow:
@@ -131,7 +133,7 @@ It shows, with no effect on the real glasses/media flow:
 - **Native automation fallback** — ACTIVE (Tasker-free) vs standby.
 - **Moonshine runtime** — should read **UNAVAILABLE (expected for this build)**.
 - **"Open chat image fallback test"** button — generates a small JPEG in the app
-  cache and runs the existing fallback engine. Chat should open with the image
+  cache and opens `ChatThreadActivity` via an explicit intent with the image
   attached and the prompt prefilled. This does **not** touch glasses/BLE/P2P/media.
 
 ### Real fallback path (through glasses)
@@ -194,3 +196,52 @@ version, and whether Tasker was installed/enabled at the time.
 
 > The in-app **Settings → Send Debug Logs** dialog also collects a focused logcat and
 > uploads it to the relay if one is configured.
+
+---
+
+## 12. Optional `:phone-test-tools` module
+
+The diagnostics screen lives in a standalone Android library module,
+`:phone-test-tools`, instead of in `:app`. The module has **no** dependency on `:app`,
+never touches the real glasses/media/BLE/P2P flow, and does not link the Moonshine
+runtime. It is wired into `:app` as a **`debugImplementation` only** (never in release).
+
+### Enable (default)
+
+The module is on by default. The `includePhoneTestTools` Gradle property defaults to
+`true`, so a normal debug build includes it:
+
+```bash
+./gradlew :app:assembleDebug --no-daemon --no-watch-fs --stacktrace
+```
+
+You can also be explicit:
+
+```bash
+./gradlew :app:assembleDebug -PincludePhoneTestTools=true
+```
+
+### Disable
+
+Build the app without the diagnostics module:
+
+```bash
+./gradlew :app:assembleDebug --no-daemon --no-watch-fs --stacktrace -PincludePhoneTestTools=false
+```
+
+When disabled, the `PhoneTestDiagnosticsActivity` is **not** present and the adb launch
+below returns an error (activity not found). Everything else in the app is unaffected.
+
+> Release builds never include the module (it is `debugImplementation` only). The
+> activity is `exported="true"` purely for manual adb launching in debug; before any
+> release either keep the module disabled or set `android:exported="false"` in
+> `phone-test-tools/src/main/AndroidManifest.xml`.
+
+### Open the diagnostics screen (module included)
+
+```bash
+adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.phone_test_tools.PhoneTestDiagnosticsActivity
+```
+
+The `applicationId` stays `com.fersaiyan.cyanbridge`; only the activity's class moved
+to the `com.fersaiyan.cyanbridge.phone_test_tools` package.

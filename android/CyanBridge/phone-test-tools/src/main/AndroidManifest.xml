@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+            Debug / manual phone-test diagnostics screen.
+
+            exported=true is ONLY for manual launch via adb during testing:
+              adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.phone_test_tools.PhoneTestDiagnosticsActivity
+
+            IMPORTANT (release): before shipping a release build either
+              - disable this module:  ./gradlew :app:assembleDebug -PincludePhoneTestTools=false
+                (the module is wired as debugImplementation only, so release builds never
+                 include it — but keep this guarantee in mind), or
+              - set android:exported="false" here.
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.phone_test_tools.PhoneTestDiagnosticsActivity"
+            android:exported="true"
+            android:label="Phone Test / Debug" />
+    </application>
+
+</manifest>
