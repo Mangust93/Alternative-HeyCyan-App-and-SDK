@@ -24,7 +24,7 @@ import java.util.TimeZone
  *   <timestamp> | <tag> | <message>
  *
  * The file is hard-capped at [MAX_FILE_BYTES]; when an append would exceed the cap the
- * oldest events are dropped (the most recent half is kept) so the log never grows
+ * oldest complete events are dropped so the log never grows
  * without bound.
  */
 object RuntimeDiagnosticsStore {
@@ -34,6 +34,12 @@ object RuntimeDiagnosticsStore {
 
     /** Hard cap on the on-disk log size. Oldest lines are trimmed past this. */
     private const val MAX_FILE_BYTES = 1 * 1024 * 1024L // 1 MB
+
+    /** Bound individual inputs before formatting so crash logging cannot allocate huge lines. */
+    private const val MAX_TAG_CHARS = 64
+    private const val MAX_MESSAGE_CHARS = 8 * 1024
+    private const val MAX_THROWABLE_MESSAGE_CHARS = 4 * 1024
+    private const val MAX_STACK_FRAME_PART_CHARS = 1024
 
     /** Default number of trailing lines [readRecent] returns when no limit is given. */
     const val DEFAULT_MAX_LINES = 300
@@ -57,20 +63,20 @@ object RuntimeDiagnosticsStore {
      * @param throwable optional error; recorded compactly as class + message + top frame.
      */
     fun append(context: Context, tag: String, message: String, throwable: Throwable? = null) {
-        val line = buildString {
-            append(timestampFormat.format(Date()))
-            append(" | ")
-            append(sanitize(tag))
-            append(" | ")
-            append(sanitize(message))
-            if (throwable != null) {
-                append(" <- ")
-                append(describeThrowable(throwable))
+        runCatching {
+            val line = buildString {
+                append(timestampFormat.format(Date()))
+                append(" | ")
+                append(sanitize(tag, MAX_TAG_CHARS))
+                append(" | ")
+                append(sanitize(message, MAX_MESSAGE_CHARS))
+                if (throwable != null) {
+                    append(" <- ")
+                    append(describeThrowable(throwable))
+                }
             }
-        }
 
-        synchronized(lock) {
-            runCatching {
+            synchronized(lock) {
                 val file = logFile(context)
                 file.appendText(line + "\n")
                 if (file.length() > MAX_FILE_BYTES) {
@@ -86,6 +92,7 @@ object RuntimeDiagnosticsStore {
      */
     fun readRecent(context: Context, maxLines: Int = DEFAULT_MAX_LINES): String {
         synchronized(lock) {
+            if (maxLines <= 0) return ""
             val file = logFile(context)
             if (!file.exists()) return ""
             val lines = runCatching { file.readLines() }.getOrDefault(emptyList())
@@ -160,21 +167,32 @@ object RuntimeDiagnosticsStore {
         return File(dir, FILE_NAME)
     }
 
-    /** Keep only the most recent half of the file so it stays under the cap. */
+    /** Keep the most recent complete events that fit under the on-disk byte cap. */
     private fun trimToCap(file: File) {
         runCatching {
-            val lines = file.readLines()
-            if (lines.size < 2) return
-            val kept = lines.subList(lines.size / 2, lines.size)
-            file.writeText(kept.joinToString("\n", postfix = "\n"))
+            val bytes = file.readBytes()
+            val cap = MAX_FILE_BYTES.toInt()
+            if (bytes.size <= cap) return
+
+            val tailStart = bytes.size - cap
+            var firstCompleteEvent = tailStart
+            while (firstCompleteEvent < bytes.size && bytes[firstCompleteEvent] != '\n'.code.toByte()) {
+                firstCompleteEvent++
+            }
+            if (firstCompleteEvent < bytes.size) firstCompleteEvent++
+
+            file.writeBytes(bytes.copyOfRange(firstCompleteEvent, bytes.size))
         }
     }
 
     private fun describeThrowable(t: Throwable): String {
         val name = t.javaClass.name
-        val msg = t.message?.let { sanitize(it) }
+        val msg = t.message?.let { sanitize(it, MAX_THROWABLE_MESSAGE_CHARS) }
         val top = t.stackTrace.firstOrNull()?.let {
-            "${it.className}.${it.methodName}(${it.fileName}:${it.lineNumber})"
+            val className = sanitize(it.className, MAX_STACK_FRAME_PART_CHARS)
+            val methodName = sanitize(it.methodName, MAX_STACK_FRAME_PART_CHARS)
+            val fileName = sanitize(it.fileName ?: "Unknown Source", MAX_STACK_FRAME_PART_CHARS)
+            "$className.$methodName($fileName:${it.lineNumber})"
         }
         return buildString {
             append(name)
@@ -190,6 +208,6 @@ object RuntimeDiagnosticsStore {
     }
 
     /** Flatten newlines / carriage returns so one event always stays on one line. */
-    private fun sanitize(value: String): String =
-        value.replace('\n', ' ').replace('\r', ' ').trim()
+    private fun sanitize(value: String, maxChars: Int): String =
+        value.take(maxChars).replace('\n', ' ').replace('\r', ' ').trim()
 }
