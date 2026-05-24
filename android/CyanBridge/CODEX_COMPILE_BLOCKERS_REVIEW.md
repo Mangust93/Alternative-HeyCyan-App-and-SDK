@@ -16,7 +16,7 @@ Build a debug APK for testing the native automation MVP and glasses/media flow.
    - Keeps existing callers compiling.
 
 2. Added Moonshine unavailable fallback.
-   - `MoonshineModelManager` now reports runtime unavailable when vendored Moonshine runtime is absent.
+   - `MoonshineModelManager` reports runtime unavailable when vendored Moonshine runtime is absent.
    - `MoonshineTranscriptionProvider` uses local fallback classes for missing Moonshine Java/JNI symbols.
    - All Moonshine runtime paths fail explicitly instead of pretending to work.
 
