@@ -156,6 +156,11 @@
             android:label="Transcription Debug" />
 
         <activity
+            android:name=".ui.debug.PhoneTestDiagnosticsActivity"
+            android:exported="true"
+            android:label="Phone Test / Debug" />
+
+        <activity
             android:name=".ui.notes.NotesListActivity"
             android:exported="false"
             android:label="Notes" />
