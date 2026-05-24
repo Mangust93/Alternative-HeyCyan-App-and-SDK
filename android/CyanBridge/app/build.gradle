@@ -134,8 +134,15 @@ dependencies {
     // LiteRT runtime for local models (Google's inference engine)
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.10.0")
 
-    // Offline transcription fallback (Moonshine; vendored module)
-    implementation project(":moonshine-voice")
+    // Offline transcription fallback (Moonshine; vendored module).
+    // The vendored native runtime is optional in this checkout. When it is absent,
+    // app code uses a compile-safe unavailable fallback instead of building :moonshine-voice.
+    def moonshineCoreCmake = rootProject.file("../third_party/moonshine/core/CMakeLists.txt")
+    if (moonshineCoreCmake.exists()) {
+        implementation project(":moonshine-voice")
+    } else {
+        logger.lifecycle("Moonshine native runtime not found; skipping :moonshine-voice dependency")
+    }
 
     // Legacy offline transcription fallback (Vosk) - kept for now until Moonshine is fully wired
     implementation "com.alphacephei:vosk-android:0.3.47"
