@@ -25,11 +25,12 @@ import java.util.Locale
  * media-button event on Android.
  *
  * Two capture paths run at once:
- *   1. [dispatchKeyEvent] / [onKeyDown] catch hardware key events while this screen is
- *      in the foreground.
+ *   1. [dispatchKeyEvent] catches hardware key events while this screen is in the
+ *      foreground.
  *   2. A framework [MediaSession] set active receives ACTION_MEDIA_BUTTON events that
  *      the system routes to the active media session (works even for buttons delivered
- *      as media-button intents rather than focused key events).
+ *      as media-button intents rather than focused key events). The session is active
+ *      only while this diagnostics screen is in the foreground.
  *
  * Launch via:
  *   adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.headset_button_tools.HeadsetButtonDiagnosticsActivity
@@ -56,6 +57,7 @@ class HeadsetButtonDiagnosticsActivity : AppCompatActivity() {
     private lateinit var logView: TextView
 
     private var mediaSession: MediaSession? = null
+    private var mediaSessionStatus = "MediaSession: не активна"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,16 +120,21 @@ class HeadsetButtonDiagnosticsActivity : AppCompatActivity() {
             ),
         )
 
-        setupMediaSession()
         render()
     }
 
+    override fun onStart() {
+        super.onStart()
+        setupMediaSession()
+    }
+
+    override fun onStop() {
+        releaseMediaSession()
+        super.onStop()
+    }
+
     override fun onDestroy() {
-        runCatching {
-            mediaSession?.isActive = false
-            mediaSession?.release()
-        }
-        mediaSession = null
+        releaseMediaSession()
         super.onDestroy()
     }
 
@@ -142,8 +149,12 @@ class HeadsetButtonDiagnosticsActivity : AppCompatActivity() {
     }
 
     private fun setupMediaSession() {
+        if (mediaSession != null) return
+
+        var pendingSession: MediaSession? = null
         runCatching {
             val session = MediaSession(this, "HeadsetButtonDiagnostics")
+            pendingSession = session
             // An active session with a non-NONE playback state is what makes the system
             // route ACTION_MEDIA_BUTTON intents to our callback.
             session.setPlaybackState(
@@ -171,10 +182,23 @@ class HeadsetButtonDiagnosticsActivity : AppCompatActivity() {
             })
             session.isActive = true
             mediaSession = session
+            mediaSessionStatus = "MediaSession: активна; слушаю ACTION_MEDIA_BUTTON"
             record("MediaSession активна — слушаю ACTION_MEDIA_BUTTON")
         }.onFailure {
+            runCatching { pendingSession?.release() }
+            mediaSession = null
+            mediaSessionStatus = "MediaSession: недоступна; остаётся dispatchKeyEvent"
             record("MediaSession недоступна: ${it.javaClass.simpleName}: ${it.message}")
         }
+    }
+
+    private fun releaseMediaSession() {
+        val session = mediaSession ?: return
+        mediaSession = null
+        runCatching { session.isActive = false }
+        runCatching { session.release() }
+        mediaSessionStatus = "MediaSession: не активна (экран не на переднем плане)"
+        render()
     }
 
     private fun recordKeyEvent(source: String, event: KeyEvent) {
@@ -198,11 +222,12 @@ class HeadsetButtonDiagnosticsActivity : AppCompatActivity() {
     }
 
     private fun render() {
-        statusView.text = if (events.isEmpty()) {
-            "Статус: Ожидание события"
+        val eventStatus = if (events.isEmpty()) {
+            "События: ожидание"
         } else {
-            "Статус: получено событий — ${events.size}"
+            "События: получено - ${events.size} (хранятся последние $MAX_EVENTS)"
         }
+        statusView.text = "$mediaSessionStatus\n$eventStatus"
         logView.text = if (events.isEmpty()) {
             "(событий пока нет)"
         } else {
