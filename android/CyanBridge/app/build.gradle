@@ -177,6 +177,20 @@ dependencies {
         logger.lifecycle("includeRuntimeDiagnosticsTools=false; skipping :runtime-diagnostics-tools dependency")
     }
 
+    // Optional conversation-translation module (V1 on-device dialog translation:
+    // SpeechRecognizer -> ML Kit Language ID -> ML Kit Translation -> TextToSpeech).
+    // Wired as debugImplementation only (never in release): the screen is exported=true
+    // for adb/manual testing and pulls in ML Kit translate model infrastructure, so it
+    // stays out of release builds until it gets a real, gated in-app entry point.
+    // Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeConversationTranslation=false
+    def includeConversationTranslation = providers.gradleProperty("includeConversationTranslation").orElse("true").get().toBoolean()
+    if (includeConversationTranslation) {
+        debugImplementation project(":conversation-translation")
+    } else {
+        logger.lifecycle("includeConversationTranslation=false; skipping :conversation-translation dependency")
+    }
+
     // Chapter 2 storage
     def room_version = "2.7.0"
     implementation "androidx.room:room-runtime:$room_version"

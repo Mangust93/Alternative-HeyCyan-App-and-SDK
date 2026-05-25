@@ -1,0 +1,50 @@
+// Optional conversation-translation module (V1 dialog translation for smart glasses).
+//
+// Standalone Android library: it does NOT depend on :app and never references
+// app-only classes (no scan/connect/media/BLE/P2P/Moonshine/glasses/Hermes/OpenRouter
+// imports, no NativeAutomationEngine, no DeviceBind/PictureVm/AlbumDownloader). It
+// implements a fully on-device translation pipeline:
+//
+//   Android SpeechRecognizer
+//     -> ML Kit Language Identification (auto-detect source language from text)
+//     -> ML Kit Translation (on-device, downloadable models)
+//     -> Android TextToSpeech (speak the translation)
+//
+// It is wired into :app only as a debugImplementation and only when the
+// `includeConversationTranslation` Gradle property is true (default). See
+// app/build.gradle for the rationale (the screen is exported=true for adb testing
+// and must not ship in a release build until it is gated behind a real entry point).
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.fersaiyan.cyanbridge.conversation_translation'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // AppCompatActivity only for the UI shell. Intentionally minimal: no project(":app")
+    // dependency, no Moonshine runtime, no glasses SDK, no Hermes, no OpenRouter.
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+
+    // ML Kit on-device language identification (detects the language of recognized text).
+    implementation 'com.google.mlkit:language-id:17.0.6'
+
+    // ML Kit on-device translation (downloadable per-language models, runs offline once
+    // models are present). SpeechRecognizer and TextToSpeech are framework APIs (no deps).
+    implementation 'com.google.mlkit:translate:17.0.3'
+}

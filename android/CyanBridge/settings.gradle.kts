@@ -38,6 +38,12 @@ include(":debug-log-tools")
 // Gradle property is true (default).
 include(":runtime-diagnostics-tools")
 
+// Optional conversation-translation (V1 on-device dialog translation:
+// SpeechRecognizer -> ML Kit Language ID -> ML Kit Translation -> TextToSpeech).
+// No Hermes, no OpenRouter. Wired into :app only as a debugImplementation and only when
+// the `includeConversationTranslation` Gradle property is true (default).
+include(":conversation-translation")
+
 // HeyCyan Core - bundled as composite build for easy compilation
 val heycyanCoreDir = file("../../heycyan-core")
 if (heycyanCoreDir.exists()) {

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- SpeechRecognizer needs the microphone (requested at runtime on API 24+). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Model download needs network. The host app already declares these, but the module
+         declares them too so it stays self-contained when reused. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application>
+        <!--
+            Conversation translation screen (V1).
+
+            On-device dialog translation with no Hermes and no OpenRouter:
+            SpeechRecognizer -> ML Kit Language ID -> ML Kit Translation -> TextToSpeech.
+
+            exported=true is ONLY for manual launch via adb during testing:
+              adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.conversation_translation.ConversationTranslationActivity
+
+            IMPORTANT (release): this module is wired into :app as debugImplementation only
+            (see app/build.gradle), so release builds never include it while it is gated by
+            the `includeConversationTranslation` property. Before any release that ships this
+            screen, either keep the module behind the flag, add a real in-app entry point, or
+            set android:exported="false" here.
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.conversation_translation.ConversationTranslationActivity"
+            android:exported="true"
+            android:label="Перевод диалога" />
+    </application>
+
+</manifest>
