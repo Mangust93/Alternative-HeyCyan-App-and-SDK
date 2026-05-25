@@ -55,7 +55,11 @@ if (includeConversationTranslation) {
 // translation and does not touch :conversation-translation. Wired into :app only as a
 // debugImplementation and only when the `includeHeadsetButtonTools` Gradle property is
 // true (default). See app/build.gradle.
-include(":headset-button-tools")
+val includeHeadsetButtonTools =
+    providers.gradleProperty("includeHeadsetButtonTools").orElse("true").get().toBoolean()
+if (includeHeadsetButtonTools) {
+    include(":headset-button-tools")
+}
 
 // HeyCyan Core - bundled as composite build for easy compilation
 val heycyanCoreDir = file("../../heycyan-core")
