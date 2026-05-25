@@ -75,6 +75,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
     private var speechRecognizer: SpeechRecognizer? = null
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+    private var disposed = false
 
     // Cache one Translator per source->target pair so we do not re-create them on every
     // phrase. All cached translators are closed in onDestroy().
@@ -90,8 +91,10 @@ class ConversationTranslationActivity : AppCompatActivity() {
         setContentView(buildUi())
 
         tts = TextToSpeech(this) { status ->
-            ttsReady = status == TextToSpeech.SUCCESS
-            if (!ttsReady) setStatus("Озвучка недоступна: TextToSpeech не инициализирован")
+            if (!disposed) {
+                ttsReady = status == TextToSpeech.SUCCESS
+                if (!ttsReady) setStatus("Озвучка недоступна: TextToSpeech не инициализирован")
+            }
         }
 
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
@@ -127,7 +130,9 @@ class ConversationTranslationActivity : AppCompatActivity() {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                     // Reset direction to Auto whenever the pair changes to avoid a stale
                     // explicit direction that does not belong to the new pair.
-                    directionSpinner.setSelection(DIR_AUTO)
+                    if (::directionSpinner.isInitialized) {
+                        directionSpinner.setSelection(DIR_AUTO)
+                    }
                 }
                 override fun onNothingSelected(p: AdapterView<*>?) {}
             }
@@ -307,7 +312,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
         detectedView.text = "—"
         translationView.text = "—"
 
-        speechRecognizer?.destroy()
+        releaseSpeechRecognizer(cancel = true)
         val recognizer = SpeechRecognizer.createSpeechRecognizer(this)
         recognizer.setRecognitionListener(recognitionListener)
         speechRecognizer = recognizer
@@ -319,12 +324,29 @@ class ConversationTranslationActivity : AppCompatActivity() {
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
         }
         setStatus("Слушаю… говорите фразу")
-        recognizer.startListening(intent)
+        runCatching { recognizer.startListening(intent) }
+            .onFailure {
+                releaseSpeechRecognizer(cancel = true)
+                setStatus("Не удалось запустить распознавание: ${it.message ?: "ошибка"}")
+            }
     }
 
     private fun onStopListening() {
-        speechRecognizer?.stopListening()
-        setStatus("Остановлено")
+        val recognizer = speechRecognizer
+        if (recognizer == null) {
+            setStatus("Распознавание не запущено")
+            return
+        }
+        runCatching { recognizer.stopListening() }
+            .onSuccess { setStatus("Остановлено") }
+            .onFailure { setStatus("Не удалось остановить распознавание: ${it.message ?: "ошибка"}") }
+    }
+
+    private fun releaseSpeechRecognizer(cancel: Boolean) {
+        val recognizer = speechRecognizer ?: return
+        speechRecognizer = null
+        if (cancel) runCatching { recognizer.cancel() }
+        runCatching { recognizer.destroy() }
     }
 
     private val recognitionListener = object : RecognitionListener {
@@ -337,10 +359,12 @@ class ConversationTranslationActivity : AppCompatActivity() {
         override fun onEvent(eventType: Int, params: Bundle?) {}
 
         override fun onError(error: Int) {
+            if (disposed) return
             setStatus("Ошибка распознавания: ${speechErrorText(error)}")
         }
 
         override fun onResults(results: Bundle?) {
+            if (disposed) return
             val text = results
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.firstOrNull()
@@ -372,15 +396,18 @@ class ConversationTranslationActivity : AppCompatActivity() {
     // region Language ID + translation ------------------------------------------------
 
     private fun identifyAndTranslate(text: String) {
+        if (disposed) return
         setStatus("Определяю язык…")
         val client = LanguageIdentification.getClient()
         client.identifyLanguage(text)
             .addOnSuccessListener { langCode ->
+                if (disposed) return@addOnSuccessListener
                 detectedView.text = languageLabel(langCode)
                 val direction = resolveDirection(langCode) ?: return@addOnSuccessListener
                 translate(text, direction.first, direction.second)
             }
             .addOnFailureListener { e ->
+                if (disposed) return@addOnFailureListener
                 detectedView.text = "—"
                 // Auto needs the detected language; explicit modes can still proceed.
                 val direction = resolveDirection(null)
@@ -394,13 +421,13 @@ class ConversationTranslationActivity : AppCompatActivity() {
     }
 
     private fun translate(text: String, source: String, target: String) {
-        val srcModel = TranslateRemoteModel.Builder(source).build()
-        val tgtModel = TranslateRemoteModel.Builder(target).build()
+        if (disposed) return
 
         // Guard: ML Kit translate() does not auto-download; check both models are present
         // and give a clear instruction instead of a raw failure when they are missing.
         modelManager.getDownloadedModels(TranslateRemoteModel::class.java)
             .addOnSuccessListener { downloaded ->
+                if (disposed) return@addOnSuccessListener
                 val codes = downloaded.map { it.language }.toSet()
                 if (!codes.contains(source) || !codes.contains(target)) {
                     setStatus("Сначала скачайте языковые модели")
@@ -409,6 +436,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
                 runTranslator(text, source, target)
             }
             .addOnFailureListener {
+                if (disposed) return@addOnFailureListener
                 // If we cannot read the model list, attempt translation; it will surface a
                 // clear message on its own failure path.
                 runTranslator(text, source, target)
@@ -416,10 +444,12 @@ class ConversationTranslationActivity : AppCompatActivity() {
     }
 
     private fun runTranslator(text: String, source: String, target: String) {
+        if (disposed) return
         setStatus("Перевожу ${languageLabel(source)} → ${languageLabel(target)}…")
         val translator = translatorFor(source, target)
         translator.translate(text)
             .addOnSuccessListener { translated ->
+                if (disposed) return@addOnSuccessListener
                 translationView.text = translated
                 lastTranslation = translated
                 lastTargetLang = target
@@ -427,6 +457,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
                 if (autoSpeakSwitch.isChecked) speak(translated, target)
             }
             .addOnFailureListener { e ->
+                if (disposed) return@addOnFailureListener
                 setStatus("Ошибка перевода: ${e.message ?: "модель недоступна, скачайте модели"}")
             }
     }
@@ -448,6 +479,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
     // region Model download -----------------------------------------------------------
 
     private fun onDownloadModels() {
+        if (disposed) return
         val (a, b) = pairLanguages()
         setStatus("Скачиваю модели: ${languageLabel(a)} и ${languageLabel(b)}…")
         // Downloading one translator for the pair pulls BOTH language models, covering
@@ -457,9 +489,11 @@ class ConversationTranslationActivity : AppCompatActivity() {
         val conditions = DownloadConditions.Builder().build()
         translator.downloadModelIfNeeded(conditions)
             .addOnSuccessListener {
+                if (disposed) return@addOnSuccessListener
                 setStatus("Модели готовы: ${languageLabel(a)} ↔ ${languageLabel(b)}")
             }
             .addOnFailureListener { e ->
+                if (disposed) return@addOnFailureListener
                 setStatus("Не удалось скачать модели (проверьте интернет): ${e.message ?: "ошибка"}")
             }
     }
@@ -510,8 +544,8 @@ class ConversationTranslationActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        speechRecognizer?.destroy()
-        speechRecognizer = null
+        disposed = true
+        releaseSpeechRecognizer(cancel = true)
         tts?.apply { stop(); shutdown() }
         tts = null
         translators.values.forEach { it.close() }

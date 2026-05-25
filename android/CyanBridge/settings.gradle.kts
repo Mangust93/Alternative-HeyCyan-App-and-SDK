@@ -42,7 +42,11 @@ include(":runtime-diagnostics-tools")
 // SpeechRecognizer -> ML Kit Language ID -> ML Kit Translation -> TextToSpeech).
 // No Hermes, no OpenRouter. Wired into :app only as a debugImplementation and only when
 // the `includeConversationTranslation` Gradle property is true (default).
-include(":conversation-translation")
+val includeConversationTranslation =
+    providers.gradleProperty("includeConversationTranslation").orElse("true").get().toBoolean()
+if (includeConversationTranslation) {
+    include(":conversation-translation")
+}
 
 // HeyCyan Core - bundled as composite build for easy compilation
 val heycyanCoreDir = file("../../heycyan-core")
