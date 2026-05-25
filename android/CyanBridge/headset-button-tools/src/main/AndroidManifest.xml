@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+            Headset / glasses button diagnostics screen.
+
+            Captures and shows real key + media-button events (KEYCODE_HEADSETHOOK,
+            KEYCODE_MEDIA_PLAY_PAUSE, KEYCODE_MEDIA_PLAY, KEYCODE_MEDIA_PAUSE,
+            KEYCODE_VOICE_ASSIST and, when routed, ACTION_MEDIA_BUTTON via a
+            framework MediaSession) so a tester can confirm whether button presses on
+            the glasses/headset actually reach Android.
+
+            This module is purely diagnostic: it does NOT bind any button to translation
+            and does NOT touch :conversation-translation, the core app, the glasses SDK
+            or the media flow.
+
+            exported=true is ONLY for manual launch via adb during testing:
+              adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.headset_button_tools.HeadsetButtonDiagnosticsActivity
+
+            IMPORTANT (release): the module is wired as debugImplementation only, so
+            release builds never include it. To additionally drop it from a debug build:
+              ./gradlew :app:assembleDebug -PincludeHeadsetButtonTools=false
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.headset_button_tools.HeadsetButtonDiagnosticsActivity"
+            android:exported="true"
+            android:label="Headset Button Diagnostics" />
+    </application>
+
+</manifest>

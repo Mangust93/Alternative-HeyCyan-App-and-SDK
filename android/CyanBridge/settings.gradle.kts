@@ -48,6 +48,15 @@ if (includeConversationTranslation) {
     include(":conversation-translation")
 }
 
+// Optional headset/glasses button diagnostic. Captures real key + media-button
+// events (KEYCODE_HEADSETHOOK / MEDIA_PLAY_PAUSE / MEDIA_PLAY / MEDIA_PAUSE /
+// VOICE_ASSIST and ACTION_MEDIA_BUTTON) so a tester can confirm whether glasses/
+// headset button presses reach Android. Purely diagnostic: binds nothing to
+// translation and does not touch :conversation-translation. Wired into :app only as a
+// debugImplementation and only when the `includeHeadsetButtonTools` Gradle property is
+// true (default). See app/build.gradle.
+include(":headset-button-tools")
+
 // HeyCyan Core - bundled as composite build for easy compilation
 val heycyanCoreDir = file("../../heycyan-core")
 if (heycyanCoreDir.exists()) {

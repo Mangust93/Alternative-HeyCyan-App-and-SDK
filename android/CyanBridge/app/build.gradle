@@ -191,6 +191,19 @@ dependencies {
         logger.lifecycle("includeConversationTranslation=false; skipping :conversation-translation dependency")
     }
 
+    // Optional headset/glasses button diagnostic module. Captures real key +
+    // media-button events so a tester can confirm whether glasses/headset button
+    // presses reach Android. Purely diagnostic: binds nothing to translation and does
+    // not touch :conversation-translation.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeHeadsetButtonTools=false
+    def includeHeadsetButtonTools = providers.gradleProperty("includeHeadsetButtonTools").orElse("true").get().toBoolean()
+    if (includeHeadsetButtonTools) {
+        debugImplementation project(":headset-button-tools")
+    } else {
+        logger.lifecycle("includeHeadsetButtonTools=false; skipping :headset-button-tools dependency")
+    }
+
     // Chapter 2 storage
     def room_version = "2.7.0"
     implementation "androidx.room:room-runtime:$room_version"

@@ -1,0 +1,39 @@
+// Optional headset/glasses button diagnostic module.
+//
+// Standalone Android library: it does NOT depend on :app and never references
+// app-only classes (no scan/connect/media/BLE/P2P/Moonshine runtime imports, and
+// it is intentionally NOT wired to :conversation-translation). Its only purpose is
+// to answer one question for a tester: "do button presses on the glasses/headset
+// actually reach Android as key / media-button events?".
+//
+// It is wired into :app only as a debugImplementation and only when the
+// `includeHeadsetButtonTools` Gradle property is true (default). See app/build.gradle.
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.fersaiyan.cyanbridge.headset_button_tools'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // AppCompatActivity only. Intentionally minimal: no project(":app") dependency,
+    // no Moonshine runtime, no glasses SDK, no conversation-translation. The
+    // android.media.session.MediaSession used for ACTION_MEDIA_BUTTON capture is part
+    // of the Android framework, so no extra media dependency is required.
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+}
