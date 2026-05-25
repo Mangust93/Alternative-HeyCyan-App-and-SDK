@@ -204,6 +204,19 @@ dependencies {
         logger.lifecycle("includeHeadsetButtonTools=false; skipping :headset-button-tools dependency")
     }
 
+    // Optional glasses BUTTON EVENT diagnostic module. Read-only: it tails the app's
+    // own "DeviceNotify" logcat (the BLE notify path glasses buttons actually use) and
+    // decodes the loadData[6] opcode. Registers no SDK listener, touches no BLE/media
+    // flow, binds nothing to translation and does not touch :conversation-translation.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeGlassesButtonEventTools=false
+    def includeGlassesButtonEventTools = providers.gradleProperty("includeGlassesButtonEventTools").orElse("true").get().toBoolean()
+    if (includeGlassesButtonEventTools) {
+        debugImplementation project(":glasses-button-event-tools")
+    } else {
+        logger.lifecycle("includeGlassesButtonEventTools=false; skipping :glasses-button-event-tools dependency")
+    }
+
     // Chapter 2 storage
     def room_version = "2.7.0"
     implementation "androidx.room:room-runtime:$room_version"

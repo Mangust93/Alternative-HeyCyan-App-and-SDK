@@ -1,0 +1,50 @@
+// Optional glasses BUTTON EVENT diagnostic module.
+//
+// Standalone Android library: it does NOT depend on :app, the glasses SDK
+// (com.oudmon.ble.*), the media flow or :conversation-translation, and it binds
+// nothing to translation. Its single job is to answer one question for a tester:
+// "when I press a button on the glasses, does anything reach the phone?".
+//
+// Unlike :headset-button-tools (which looks for Android key / media-button events),
+// glasses buttons were found to arrive over the HeyCyan SDK BLE notify path
+// (GlassesDeviceNotifyListener.parseData -> GlassesDeviceNotifyRsp.getLoadData()),
+// which :app already prints for EVERY frame as:
+//   Log.i("DeviceNotify", "cmdType=..., loadData=...")
+// See CLAUDE_GLASSES_BUTTON_EVENT_INVESTIGATION.md.
+//
+// This module therefore stays read-only: it tails the app's OWN logcat for the
+// "DeviceNotify" tag (exactly like SettingsActivity already does) and decodes the
+// loadData[6] opcode into a human label. It never registers an SDK listener, never
+// touches BLE and never changes any glasses/media behaviour.
+//
+// It is wired into :app only as a debugImplementation and only when the
+// `includeGlassesButtonEventTools` Gradle property is true (default). See app/build.gradle.
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.fersaiyan.cyanbridge.glasses_button_event_tools'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // AppCompatActivity only. Intentionally minimal: no project(":app") dependency,
+    // no glasses SDK, no BLE, no Moonshine runtime, no conversation-translation.
+    // Reading the app's own logcat uses java.lang.Runtime, part of the JDK, so no
+    // extra dependency is required.
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+}

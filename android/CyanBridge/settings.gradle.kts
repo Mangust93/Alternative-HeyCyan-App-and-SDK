@@ -61,6 +61,20 @@ if (includeHeadsetButtonTools) {
     include(":headset-button-tools")
 }
 
+// Optional glasses BUTTON EVENT diagnostic. Glasses buttons do not arrive as Android
+// key/media events; they arrive over the HeyCyan SDK BLE notify path, which :app
+// already logs for every frame under the "DeviceNotify" tag. This module is read-only:
+// it tails the app's own logcat for that tag and decodes the loadData[6] opcode so a
+// tester can confirm which glasses button produced which notify. It binds nothing to
+// translation, does not touch :conversation-translation, and registers no SDK listener.
+// Wired into :app only as a debugImplementation and only when the
+// `includeGlassesButtonEventTools` Gradle property is true (default). See app/build.gradle.
+val includeGlassesButtonEventTools =
+    providers.gradleProperty("includeGlassesButtonEventTools").orElse("true").get().toBoolean()
+if (includeGlassesButtonEventTools) {
+    include(":glasses-button-event-tools")
+}
+
 // HeyCyan Core - bundled as composite build for easy compilation
 val heycyanCoreDir = file("../../heycyan-core")
 if (heycyanCoreDir.exists()) {
