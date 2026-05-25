@@ -2,13 +2,18 @@ package com.fersaiyan.cyanbridge.conversation_translation
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.view.View
+import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -17,18 +22,19 @@ import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.Switch
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import com.google.mlkit.common.model.DownloadConditions
+import com.google.mlkit.common.model.RemoteModelManager
 import com.google.mlkit.nl.languageid.LanguageIdentification
 import com.google.mlkit.nl.translate.TranslateLanguage
 import com.google.mlkit.nl.translate.TranslateRemoteModel
 import com.google.mlkit.nl.translate.Translation
 import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
-import com.google.mlkit.common.model.DownloadConditions
-import com.google.mlkit.common.model.RemoteModelManager
 import java.util.Locale
 
 /**
@@ -36,7 +42,7 @@ import java.util.Locale
  *
  * Pipeline (no Hermes, no OpenRouter, no official-app code):
  *   Android [SpeechRecognizer]
- *     -> ML Kit Language Identification (detect the language of the recognized text)
+ *     -> ML Kit Language Identification (only used by the two "Авто" modes)
  *     -> ML Kit Translation (on-device, downloadable models)
  *     -> Android [TextToSpeech] (speak the translation)
  *
@@ -52,21 +58,48 @@ class ConversationTranslationActivity : AppCompatActivity() {
     private companion object {
         const val RECORD_AUDIO_REQUEST = 4201
 
-        // Language pairs offered in V1.
+        // SpeechRecognizer.ERROR_SERVER_DISCONNECTED (added API 33). Referenced as a literal
+        // so the module still builds/runs on minSdk 24 without a NewApi field access.
+        const val ERROR_SERVER_DISCONNECTED = 11
+
+        // Small gap between destroying a recognizer and creating the next one. Recreating
+        // immediately after an error/stop can otherwise hit "recognizer busy".
+        const val RESTART_COOLDOWN_MS = 300L
+
+        // Single "Кого переводим?" picker. Each entry bundles the language pair AND the
+        // direction, so the user never has to reconcile two separate dropdowns.
+        const val MODE_AUTO_RU_EN = 0 // Авто: русский ↔ английский (experimental)
+        const val MODE_RU_EN = 1      // Я говорю по-русски → английский
+        const val MODE_EN_RU = 2      // Собеседник говорит по-английски → русский
+        const val MODE_AUTO_RU_ES = 3 // Авто: русский ↔ испанский (experimental)
+        const val MODE_RU_ES = 4      // Я говорю по-русски → испанский
+        const val MODE_ES_RU = 5      // Собеседник говорит по-испански → русский
+
+        // Language-pair identity, derived from the selected mode (used by model download
+        // and the readiness badge).
         const val PAIR_RU_EN = 0
         const val PAIR_RU_ES = 1
 
-        // Direction modes (index into the direction spinner).
-        const val DIR_AUTO = 0
-        const val DIR_RU_EN = 1
-        const val DIR_EN_RU = 2
-        const val DIR_RU_ES = 3
-        const val DIR_ES_RU = 4
+        // State labels shown in the prominent indicator.
+        const val STATE_READY = "Готово"
+        const val STATE_LISTENING = "Слушаю…"
+        const val STATE_RECOGNIZING = "Распознаю…"
+        const val STATE_TRANSLATING = "Перевожу…"
+        const val STATE_SPEAKING = "Озвучиваю…"
+        const val STATE_DOWNLOADING = "Скачиваю модели…"
+        const val STATE_MODELS_READY = "Модели готовы"
+        const val STATE_ERROR = "Ошибка"
+
+        const val AUTO_HINT =
+            "Авто-режим экспериментальный. Если английский плохо распознаётся, выберите режим " +
+                "«Собеседник говорит по-английски → русский»."
     }
 
-    private lateinit var pairSpinner: Spinner
-    private lateinit var directionSpinner: Spinner
+    private lateinit var modeSpinner: Spinner
     private lateinit var autoSpeakSwitch: Switch
+    private lateinit var stateView: TextView
+    private lateinit var modelsBadgeView: TextView
+    private lateinit var autoHintView: TextView
     private lateinit var sourceView: TextView
     private lateinit var detectedView: TextView
     private lateinit var translationView: TextView
@@ -77,6 +110,8 @@ class ConversationTranslationActivity : AppCompatActivity() {
     private var ttsReady = false
     private var disposed = false
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+
     // Cache one Translator per source->target pair so we do not re-create them on every
     // phrase. All cached translators are closed in onDestroy().
     private val translators = HashMap<String, Translator>()
@@ -84,6 +119,9 @@ class ConversationTranslationActivity : AppCompatActivity() {
 
     private var lastTranslation: String = ""
     private var lastTargetLang: String? = null
+
+    // Which pair (PAIR_RU_EN / PAIR_RU_ES) we have confirmed downloaded models for, or null.
+    private var verifiedPair: Int? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,15 +131,28 @@ class ConversationTranslationActivity : AppCompatActivity() {
         tts = TextToSpeech(this) { status ->
             if (!disposed) {
                 ttsReady = status == TextToSpeech.SUCCESS
-                if (!ttsReady) setStatus("Озвучка недоступна: TextToSpeech не инициализирован")
+                if (!ttsReady) report(STATE_ERROR, "Озвучка недоступна: TextToSpeech не инициализирован")
             }
         }
+        tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) {
+                mainHandler.post { if (!disposed) report(STATE_READY, "Готово") }
+            }
+            @Deprecated("Deprecated in Java")
+            override fun onError(utteranceId: String?) {
+                mainHandler.post { if (!disposed) report(STATE_ERROR, "Ошибка озвучки") }
+            }
+        })
 
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            setStatus("Распознавание речи недоступно на этом устройстве")
+            report(STATE_ERROR, "Распознавание речи недоступно на этом устройстве")
+        } else {
+            report(STATE_READY, "Готово. Скачайте модели выбранной пары, затем нажмите Старт.")
         }
         ensureAudioPermission()
-        setStatus("Готово. Скачайте модели выбранной пары, затем нажмите Старт.")
+        updateModelsBadge()
+        updateAutoHint()
     }
 
     // region UI -----------------------------------------------------------------------
@@ -110,6 +161,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
         val density = resources.displayMetrics.density
         val pad = (16 * density).toInt()
         val gap = (8 * density).toInt()
+        val bottomSpacer = (96 * density).toInt()
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -123,44 +175,58 @@ class ConversationTranslationActivity : AppCompatActivity() {
             setPadding(0, 0, 0, gap)
         })
 
-        root.addView(label("Языковая пара"))
-        pairSpinner = Spinner(this).apply {
-            adapter = simpleAdapter(listOf("Русский ↔ Английский", "Русский ↔ Испанский"))
+        // Prominent state indicator, kept high on the screen so it is always visible.
+        root.addView(label("Состояние"))
+        stateView = TextView(this).apply {
+            textSize = 22f
+            setTypeface(typeface, Typeface.BOLD)
+            text = STATE_READY
+        }
+        root.addView(stateView)
+
+        modelsBadgeView = TextView(this).apply {
+            textSize = 14f
+            setTextColor(Color.DKGRAY)
+            setPadding(0, gap, 0, 0)
+            text = "Модели текущей пары: не проверены"
+        }
+        root.addView(modelsBadgeView)
+
+        root.addView(label("Кого переводим?"))
+        modeSpinner = Spinner(this).apply {
+            adapter = simpleAdapter(
+                listOf(
+                    "Авто: русский ↔ английский",
+                    "Я говорю по-русски → английский",
+                    "Собеседник говорит по-английски → русский",
+                    "Авто: русский ↔ испанский",
+                    "Я говорю по-русски → испанский",
+                    "Собеседник говорит по-испански → русский",
+                )
+            )
             onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                    // Reset direction to Auto whenever the pair changes to avoid a stale
-                    // explicit direction that does not belong to the new pair.
-                    if (::directionSpinner.isInitialized) {
-                        directionSpinner.setSelection(DIR_AUTO)
-                    }
+                    updateModelsBadge()
+                    updateAutoHint()
                 }
                 override fun onNothingSelected(p: AdapterView<*>?) {}
             }
         }
-        root.addView(pairSpinner)
+        root.addView(modeSpinner)
 
-        root.addView(label("Режим направления"))
-        directionSpinner = Spinner(this).apply {
-            adapter = simpleAdapter(listOf("Авто", "RU→EN", "EN→RU", "RU→ES", "ES→RU"))
+        autoHintView = TextView(this).apply {
+            textSize = 13f
+            setTextColor(Color.parseColor("#B26A00"))
+            setPadding(0, gap, 0, 0)
+            text = AUTO_HINT
         }
-        root.addView(directionSpinner)
+        root.addView(autoHintView)
 
-        root.addView(Button(this).apply {
-            text = "Скачать модели"
-            setOnClickListener { onDownloadModels() }
-        })
-        root.addView(Button(this).apply {
-            text = "Старт"
-            setOnClickListener { onStartListening() }
-        })
-        root.addView(Button(this).apply {
-            text = "Стоп"
-            setOnClickListener { onStopListening() }
-        })
-        root.addView(Button(this).apply {
-            text = "Озвучить"
-            setOnClickListener { onSpeakAgain() }
-        })
+        // Primary actions, kept above the read-only output blocks.
+        root.addView(actionButton("Скачать модели") { onDownloadModels() })
+        root.addView(actionButton("Старт") { onStartListening() })
+        root.addView(actionButton("Стоп") { onStopListening() })
+        root.addView(actionButton("Озвучить") { onSpeakAgain() })
 
         autoSpeakSwitch = Switch(this).apply {
             text = "Автоозвучка"
@@ -181,17 +247,40 @@ class ConversationTranslationActivity : AppCompatActivity() {
         translationView = valueView()
         root.addView(translationView)
 
-        root.addView(label("Статус / ошибка"))
+        root.addView(label("Подробности / ошибка"))
         statusView = valueView()
         root.addView(statusView)
 
-        return ScrollView(this).apply {
-            addView(root)
+        // Keeps the last block clear of the phone's bottom gesture zone even before the
+        // window-inset padding is applied.
+        root.addView(View(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.MATCH_PARENT,
+                bottomSpacer,
+            )
+        })
+
+        val scroll = ScrollView(this).apply {
+            clipToPadding = false
+            isFillViewport = true
+            addView(root)
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT,
             )
         }
+
+        // Apply safe top/bottom (and side) padding so the camera cutout, status bar and the
+        // bottom gesture/navigation area never overlap the content.
+        ViewCompat.setOnApplyWindowInsetsListener(scroll) { v, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(scroll)
+        return scroll
     }
 
     private fun label(text: String): TextView = TextView(this).apply {
@@ -203,11 +292,32 @@ class ConversationTranslationActivity : AppCompatActivity() {
     private fun valueView(): TextView = TextView(this).apply {
         textSize = 14f
         setTextIsSelectable(true)
+        // Multi-line: never truncate recognized text, translations or error details.
+        maxLines = Int.MAX_VALUE
+        setHorizontallyScrolling(false)
         text = "—"
+    }
+
+    private fun actionButton(text: String, onClick: () -> Unit): Button = Button(this).apply {
+        this.text = text
+        setOnClickListener { onClick() }
     }
 
     private fun simpleAdapter(items: List<String>): ArrayAdapter<String> =
         ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, items)
+
+    private fun updateModelsBadge() {
+        if (!::modelsBadgeView.isInitialized) return
+        val ready = verifiedPair != null && verifiedPair == currentPair()
+        modelsBadgeView.text =
+            if (ready) "Модели текущей пары: готовы" else "Модели текущей пары: не проверены"
+        modelsBadgeView.setTextColor(if (ready) Color.parseColor("#2E7D32") else Color.DKGRAY)
+    }
+
+    private fun updateAutoHint() {
+        if (!::autoHintView.isInitialized) return
+        autoHintView.visibility = if (isAutoMode()) View.VISIBLE else View.GONE
+    }
 
     // endregion
 
@@ -234,67 +344,68 @@ class ConversationTranslationActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == RECORD_AUDIO_REQUEST) {
             val ok = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
-            setStatus(if (ok) "Доступ к микрофону разрешён" else "Нет доступа к микрофону — распознавание не запустится")
+            if (ok) {
+                report(STATE_READY, "Доступ к микрофону разрешён")
+            } else {
+                report(STATE_ERROR, "Нет доступа к микрофону — распознавание не запустится")
+            }
         }
     }
 
     // endregion
 
-    // region Language pair / direction helpers ----------------------------------------
+    // region Mode helpers --------------------------------------------------------------
 
-    /** Two ML Kit language codes of the currently selected pair (first ↔ second). */
-    private fun pairLanguages(): Pair<String, String> = when (pairSpinner.selectedItemPosition) {
+    private fun selectedMode(): Int =
+        if (::modeSpinner.isInitialized) modeSpinner.selectedItemPosition else MODE_AUTO_RU_EN
+
+    private fun isAutoMode(): Boolean = selectedMode() == MODE_AUTO_RU_EN || selectedMode() == MODE_AUTO_RU_ES
+
+    /** Language pair the current mode belongs to. */
+    private fun currentPair(): Int = when (selectedMode()) {
+        MODE_AUTO_RU_ES, MODE_RU_ES, MODE_ES_RU -> PAIR_RU_ES
+        else -> PAIR_RU_EN
+    }
+
+    /** The two ML Kit language codes of the current pair (used for model download). */
+    private fun pairLanguages(): Pair<String, String> = when (currentPair()) {
         PAIR_RU_ES -> TranslateLanguage.RUSSIAN to TranslateLanguage.SPANISH
         else -> TranslateLanguage.RUSSIAN to TranslateLanguage.ENGLISH
     }
 
     /**
-     * Resolves the (source, target) translation languages for the current phrase, given
-     * the selected direction mode and (for Auto) the language detected in [detectedLang].
-     * Returns null and reports a user-facing error when the input cannot be translated.
+     * Resolves the (source, target) translation languages for the current phrase. Explicit
+     * modes return a fixed direction; the two Auto modes pick the direction from the
+     * language detected in [detectedLang]. Returns null (and reports an error) when an Auto
+     * mode cannot map the detected language onto its pair.
      */
-    private fun resolveDirection(detectedLang: String?): Pair<String, String>? {
-        val (a, b) = pairLanguages()
-        return when (directionSpinner.selectedItemPosition) {
-            DIR_RU_EN -> {
-                if (pairSpinner.selectedItemPosition != PAIR_RU_EN) {
-                    setStatus("Направление RU→EN не входит в выбранную пару"); null
-                } else TranslateLanguage.RUSSIAN to TranslateLanguage.ENGLISH
-            }
-            DIR_EN_RU -> {
-                if (pairSpinner.selectedItemPosition != PAIR_RU_EN) {
-                    setStatus("Направление EN→RU не входит в выбранную пару"); null
-                } else TranslateLanguage.ENGLISH to TranslateLanguage.RUSSIAN
-            }
-            DIR_RU_ES -> {
-                if (pairSpinner.selectedItemPosition != PAIR_RU_ES) {
-                    setStatus("Направление RU→ES не входит в выбранную пару"); null
-                } else TranslateLanguage.RUSSIAN to TranslateLanguage.SPANISH
-            }
-            DIR_ES_RU -> {
-                if (pairSpinner.selectedItemPosition != PAIR_RU_ES) {
-                    setStatus("Направление ES→RU не входит в выбранную пару"); null
-                } else TranslateLanguage.SPANISH to TranslateLanguage.RUSSIAN
-            }
-            else -> { // Авто: pick the direction from the detected language within the pair.
-                when (detectedLang) {
-                    a -> a to b
-                    b -> b to a
-                    null, "und" -> { setStatus("Не удалось определить язык фразы"); null }
-                    else -> {
-                        setStatus("Распознан язык «$detectedLang», он не входит в выбранную пару"); null
-                    }
+    private fun resolveDirection(detectedLang: String?): Pair<String, String>? = when (selectedMode()) {
+        MODE_RU_EN -> TranslateLanguage.RUSSIAN to TranslateLanguage.ENGLISH
+        MODE_EN_RU -> TranslateLanguage.ENGLISH to TranslateLanguage.RUSSIAN
+        MODE_RU_ES -> TranslateLanguage.RUSSIAN to TranslateLanguage.SPANISH
+        MODE_ES_RU -> TranslateLanguage.SPANISH to TranslateLanguage.RUSSIAN
+        else -> {
+            val (a, b) = pairLanguages() // a = Russian, b = English or Spanish
+            when (detectedLang) {
+                a -> a to b
+                b -> b to a
+                null, "und" -> {
+                    report(STATE_ERROR, "Не удалось определить язык фразы. $AUTO_HINT"); null
+                }
+                else -> {
+                    report(STATE_ERROR, "Распознан язык «${languageLabel(detectedLang)}», он не входит в выбранную пару. $AUTO_HINT")
+                    null
                 }
             }
         }
     }
 
-    /** Speech-recognition language hint. Auto biases to the pair's primary (Russian). */
-    private fun recognitionLocale(): String = when (directionSpinner.selectedItemPosition) {
-        DIR_RU_EN, DIR_RU_ES -> "ru-RU"
-        DIR_EN_RU -> "en-US"
-        DIR_ES_RU -> "es-ES"
-        else -> if (pairSpinner.selectedItemPosition == PAIR_RU_ES) "ru-RU" else "ru-RU"
+    /** Speech-recognition language hint for the current mode. */
+    private fun recognitionLocale(): String = when (selectedMode()) {
+        MODE_EN_RU -> "en-US"
+        MODE_ES_RU -> "es-ES"
+        // RU→… and both Auto modes bias the recognizer to Russian.
+        else -> "ru-RU"
     }
 
     // endregion
@@ -303,16 +414,29 @@ class ConversationTranslationActivity : AppCompatActivity() {
 
     private fun onStartListening() {
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            setStatus("Распознавание речи недоступно на этом устройстве"); return
+            report(STATE_ERROR, "Распознавание речи недоступно на этом устройстве"); return
         }
         if (!ensureAudioPermission()) {
-            setStatus("Запрошен доступ к микрофону — повторите Старт после разрешения"); return
+            report(STATE_ERROR, "Запрошен доступ к микрофону — повторите Старт после разрешения"); return
         }
         sourceView.text = "—"
         detectedView.text = "—"
         translationView.text = "—"
 
+        // Always destroy any previous recognizer before creating a new one. After an error
+        // the old instance is unusable, and a fresh one avoids "recognizer busy".
+        val hadRecognizer = speechRecognizer != null
         releaseSpeechRecognizer(cancel = true)
+
+        report(STATE_LISTENING, listeningDetail())
+        mainHandler.removeCallbacks(beginListeningRunnable)
+        mainHandler.postDelayed(beginListeningRunnable, if (hadRecognizer) RESTART_COOLDOWN_MS else 0L)
+    }
+
+    private val beginListeningRunnable = Runnable { beginListening() }
+
+    private fun beginListening() {
+        if (disposed) return
         val recognizer = SpeechRecognizer.createSpeechRecognizer(this)
         recognizer.setRecognitionListener(recognitionListener)
         speechRecognizer = recognizer
@@ -323,23 +447,28 @@ class ConversationTranslationActivity : AppCompatActivity() {
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
         }
-        setStatus("Слушаю… говорите фразу")
         runCatching { recognizer.startListening(intent) }
             .onFailure {
                 releaseSpeechRecognizer(cancel = true)
-                setStatus("Не удалось запустить распознавание: ${it.message ?: "ошибка"}")
+                report(STATE_ERROR, "Не удалось запустить распознавание: ${it.message ?: "ошибка"}")
             }
     }
 
+    private fun listeningDetail(): String {
+        val base = "Слушаю… говорите фразу (${recognitionLocale()})"
+        return if (isAutoMode()) "$base\n$AUTO_HINT" else base
+    }
+
     private fun onStopListening() {
+        mainHandler.removeCallbacks(beginListeningRunnable)
         val recognizer = speechRecognizer
         if (recognizer == null) {
-            setStatus("Распознавание не запущено")
+            report(STATE_READY, "Распознавание не запущено")
             return
         }
         runCatching { recognizer.stopListening() }
-            .onSuccess { setStatus("Остановлено") }
-            .onFailure { setStatus("Не удалось остановить распознавание: ${it.message ?: "ошибка"}") }
+            .onSuccess { report(STATE_READY, "Остановлено") }
+            .onFailure { report(STATE_ERROR, "Не удалось остановить распознавание: ${it.message ?: "ошибка"}") }
     }
 
     private fun releaseSpeechRecognizer(cancel: Boolean) {
@@ -354,13 +483,22 @@ class ConversationTranslationActivity : AppCompatActivity() {
         override fun onBeginningOfSpeech() {}
         override fun onRmsChanged(rmsdB: Float) {}
         override fun onBufferReceived(buffer: ByteArray?) {}
-        override fun onEndOfSpeech() {}
+        override fun onEndOfSpeech() {
+            if (!disposed) report(STATE_RECOGNIZING, "Распознаю…")
+        }
         override fun onPartialResults(partialResults: Bundle?) {}
         override fun onEvent(eventType: Int, params: Bundle?) {}
 
         override fun onError(error: Int) {
             if (disposed) return
-            setStatus("Ошибка распознавания: ${speechErrorText(error)}")
+            // The recognizer is unusable after an error; destroy it so the next Старт builds
+            // a clean instance.
+            releaseSpeechRecognizer(cancel = true)
+            if (error == ERROR_SERVER_DISCONNECTED) {
+                report(STATE_ERROR, "Сервис распознавания отключился. Нажмите Старт ещё раз.")
+            } else {
+                report(STATE_ERROR, "Ошибка распознавания: ${speechErrorText(error)}")
+            }
         }
 
         override fun onResults(results: Bundle?) {
@@ -371,7 +509,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
                 ?.trim()
                 .orEmpty()
             if (text.isEmpty()) {
-                setStatus("Пустой результат распознавания, попробуйте ещё раз"); return
+                report(STATE_ERROR, "Пустой результат распознавания, попробуйте ещё раз"); return
             }
             sourceView.text = text
             identifyAndTranslate(text)
@@ -397,7 +535,16 @@ class ConversationTranslationActivity : AppCompatActivity() {
 
     private fun identifyAndTranslate(text: String) {
         if (disposed) return
-        setStatus("Определяю язык…")
+        // Explicit modes do not need language identification — translate directly. This
+        // keeps EN→RU / ES→RU reliable even when the recognizer mis-tags the language.
+        if (!isAutoMode()) {
+            detectedView.text = "—"
+            val direction = resolveDirection(null) ?: return
+            translate(text, direction.first, direction.second)
+            return
+        }
+
+        report(STATE_TRANSLATING, "Определяю язык…")
         val client = LanguageIdentification.getClient()
         client.identifyLanguage(text)
             .addOnSuccessListener { langCode ->
@@ -409,13 +556,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 if (disposed) return@addOnFailureListener
                 detectedView.text = "—"
-                // Auto needs the detected language; explicit modes can still proceed.
-                val direction = resolveDirection(null)
-                if (direction != null) {
-                    translate(text, direction.first, direction.second)
-                } else {
-                    setStatus("Не удалось определить язык: ${e.message ?: "ошибка ML Kit"}")
-                }
+                report(STATE_ERROR, "Не удалось определить язык: ${e.message ?: "ошибка ML Kit"}. $AUTO_HINT")
             }
             .addOnCompleteListener { client.close() }
     }
@@ -430,9 +571,12 @@ class ConversationTranslationActivity : AppCompatActivity() {
                 if (disposed) return@addOnSuccessListener
                 val codes = downloaded.map { it.language }.toSet()
                 if (!codes.contains(source) || !codes.contains(target)) {
-                    setStatus("Сначала скачайте языковые модели")
+                    report(STATE_ERROR, "Сначала скачайте языковые модели (кнопка «Скачать модели»)")
                     return@addOnSuccessListener
                 }
+                // Models for this pair are confirmed present.
+                verifiedPair = currentPair()
+                updateModelsBadge()
                 runTranslator(text, source, target)
             }
             .addOnFailureListener {
@@ -445,7 +589,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
 
     private fun runTranslator(text: String, source: String, target: String) {
         if (disposed) return
-        setStatus("Перевожу ${languageLabel(source)} → ${languageLabel(target)}…")
+        report(STATE_TRANSLATING, "Перевожу ${languageLabel(source)} → ${languageLabel(target)}…")
         val translator = translatorFor(source, target)
         translator.translate(text)
             .addOnSuccessListener { translated ->
@@ -453,12 +597,12 @@ class ConversationTranslationActivity : AppCompatActivity() {
                 translationView.text = translated
                 lastTranslation = translated
                 lastTargetLang = target
-                setStatus("Готово")
+                report(STATE_READY, "Готово")
                 if (autoSpeakSwitch.isChecked) speak(translated, target)
             }
             .addOnFailureListener { e ->
                 if (disposed) return@addOnFailureListener
-                setStatus("Ошибка перевода: ${e.message ?: "модель недоступна, скачайте модели"}")
+                report(STATE_ERROR, "Ошибка перевода: ${e.message ?: "модель недоступна, скачайте модели"}")
             }
     }
 
@@ -481,7 +625,8 @@ class ConversationTranslationActivity : AppCompatActivity() {
     private fun onDownloadModels() {
         if (disposed) return
         val (a, b) = pairLanguages()
-        setStatus("Скачиваю модели: ${languageLabel(a)} и ${languageLabel(b)}…")
+        val pairAtRequest = currentPair()
+        report(STATE_DOWNLOADING, "Скачиваю модели: ${languageLabel(a)} и ${languageLabel(b)}…")
         // Downloading one translator for the pair pulls BOTH language models, covering
         // either direction. Default conditions allow any network; failures (e.g. no
         // internet) are reported without crashing.
@@ -490,11 +635,13 @@ class ConversationTranslationActivity : AppCompatActivity() {
         translator.downloadModelIfNeeded(conditions)
             .addOnSuccessListener {
                 if (disposed) return@addOnSuccessListener
-                setStatus("Модели готовы: ${languageLabel(a)} ↔ ${languageLabel(b)}")
+                verifiedPair = pairAtRequest
+                updateModelsBadge()
+                report(STATE_MODELS_READY, "Модели готовы: ${languageLabel(a)} ↔ ${languageLabel(b)}")
             }
             .addOnFailureListener { e ->
                 if (disposed) return@addOnFailureListener
-                setStatus("Не удалось скачать модели (проверьте интернет): ${e.message ?: "ошибка"}")
+                report(STATE_ERROR, "Не удалось скачать модели. Проверьте интернет. (${e.message ?: "ошибка"})")
             }
     }
 
@@ -505,7 +652,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
     private fun onSpeakAgain() {
         val target = lastTargetLang
         if (lastTranslation.isEmpty() || target == null) {
-            setStatus("Нет перевода для озвучки"); return
+            report(STATE_ERROR, "Нет перевода для озвучки"); return
         }
         speak(lastTranslation, target)
     }
@@ -513,13 +660,14 @@ class ConversationTranslationActivity : AppCompatActivity() {
     private fun speak(text: String, languageCode: String) {
         val engine = tts
         if (engine == null || !ttsReady) {
-            setStatus("Озвучка недоступна: TextToSpeech не готов"); return
+            report(STATE_ERROR, "Озвучка недоступна: TextToSpeech не готов"); return
         }
         val locale = ttsLocale(languageCode)
         val result = engine.setLanguage(locale)
         if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-            setStatus("Язык озвучки недоступен: ${languageLabel(languageCode)}"); return
+            report(STATE_ERROR, "Язык озвучки недоступен: ${languageLabel(languageCode)}"); return
         }
+        report(STATE_SPEAKING, "Озвучиваю…")
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "conv-translation")
     }
 
@@ -539,12 +687,15 @@ class ConversationTranslationActivity : AppCompatActivity() {
         else -> code
     }
 
-    private fun setStatus(message: String) {
-        statusView.text = message
+    /** Updates the prominent state label and the detailed status line together. */
+    private fun report(state: String, detail: String) {
+        if (::stateView.isInitialized) stateView.text = state
+        if (::statusView.isInitialized) statusView.text = detail
     }
 
     override fun onDestroy() {
         disposed = true
+        mainHandler.removeCallbacks(beginListeningRunnable)
         releaseSpeechRecognizer(cancel = true)
         tts?.apply { stop(); shutdown() }
         tts = null
