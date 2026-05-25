@@ -106,6 +106,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
     private lateinit var statusView: TextView
 
     private var speechRecognizer: SpeechRecognizer? = null
+    private var recognizerNeedsCooldown = false
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var disposed = false
@@ -425,12 +426,13 @@ class ConversationTranslationActivity : AppCompatActivity() {
 
         // Always destroy any previous recognizer before creating a new one. After an error
         // the old instance is unusable, and a fresh one avoids "recognizer busy".
-        val hadRecognizer = speechRecognizer != null
+        val needsCooldown = speechRecognizer != null || recognizerNeedsCooldown
         releaseSpeechRecognizer(cancel = true)
+        recognizerNeedsCooldown = false
 
         report(STATE_LISTENING, listeningDetail())
         mainHandler.removeCallbacks(beginListeningRunnable)
-        mainHandler.postDelayed(beginListeningRunnable, if (hadRecognizer) RESTART_COOLDOWN_MS else 0L)
+        mainHandler.postDelayed(beginListeningRunnable, if (needsCooldown) RESTART_COOLDOWN_MS else 0L)
     }
 
     private val beginListeningRunnable = Runnable { beginListening() }
@@ -438,7 +440,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
     private fun beginListening() {
         if (disposed) return
         val recognizer = SpeechRecognizer.createSpeechRecognizer(this)
-        recognizer.setRecognitionListener(recognitionListener)
+        recognizer.setRecognitionListener(recognitionListenerFor(recognizer))
         speechRecognizer = recognizer
 
         val intent = android.content.Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
@@ -450,6 +452,7 @@ class ConversationTranslationActivity : AppCompatActivity() {
         runCatching { recognizer.startListening(intent) }
             .onFailure {
                 releaseSpeechRecognizer(cancel = true)
+                recognizerNeedsCooldown = true
                 report(STATE_ERROR, "Не удалось запустить распознавание: ${it.message ?: "ошибка"}")
             }
     }
@@ -478,22 +481,23 @@ class ConversationTranslationActivity : AppCompatActivity() {
         runCatching { recognizer.destroy() }
     }
 
-    private val recognitionListener = object : RecognitionListener {
+    private fun recognitionListenerFor(recognizer: SpeechRecognizer) = object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {}
         override fun onBeginningOfSpeech() {}
         override fun onRmsChanged(rmsdB: Float) {}
         override fun onBufferReceived(buffer: ByteArray?) {}
         override fun onEndOfSpeech() {
-            if (!disposed) report(STATE_RECOGNIZING, "Распознаю…")
+            if (!disposed && speechRecognizer === recognizer) report(STATE_RECOGNIZING, "Распознаю…")
         }
         override fun onPartialResults(partialResults: Bundle?) {}
         override fun onEvent(eventType: Int, params: Bundle?) {}
 
         override fun onError(error: Int) {
-            if (disposed) return
+            if (disposed || speechRecognizer !== recognizer) return
             // The recognizer is unusable after an error; destroy it so the next Старт builds
             // a clean instance.
             releaseSpeechRecognizer(cancel = true)
+            recognizerNeedsCooldown = true
             if (error == ERROR_SERVER_DISCONNECTED) {
                 report(STATE_ERROR, "Сервис распознавания отключился. Нажмите Старт ещё раз.")
             } else {
@@ -502,7 +506,9 @@ class ConversationTranslationActivity : AppCompatActivity() {
         }
 
         override fun onResults(results: Bundle?) {
-            if (disposed) return
+            if (disposed || speechRecognizer !== recognizer) return
+            releaseSpeechRecognizer(cancel = false)
+            recognizerNeedsCooldown = true
             val text = results
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.firstOrNull()
@@ -672,9 +678,9 @@ class ConversationTranslationActivity : AppCompatActivity() {
     }
 
     private fun ttsLocale(languageCode: String): Locale = when (languageCode) {
-        TranslateLanguage.RUSSIAN -> Locale("ru")
-        TranslateLanguage.SPANISH -> Locale("es")
-        else -> Locale.ENGLISH
+        TranslateLanguage.RUSSIAN -> Locale("ru", "RU")
+        TranslateLanguage.SPANISH -> Locale("es", "ES")
+        else -> Locale.US
     }
 
     // endregion
