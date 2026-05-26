@@ -1,5 +1,6 @@
 package com.fersaiyan.cyanbridge.photo_question_tools
 
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import java.util.concurrent.ExecutorService
@@ -12,8 +13,8 @@ import java.util.concurrent.Executors
  * deterministic local placeholder answer after a short simulated delay, so the rest of
  * the screen (pick photo -> type question -> show answer) can be exercised end to end
  * with no backend. To go live, replace the body of [computePlaceholderAnswer] with a
- * real HTTP call (upload [Request.imageName] bytes + [Request.question], return the
- * server's answer); nothing else in [PhotoQuestionActivity] has to change.
+ * real integration that reads [Request.imageUri] and submits it with [Request.question];
+ * nothing else in [PhotoQuestionActivity] has to change.
  *
  * The work runs on a single background thread; the result is delivered back on the main
  * thread via [Handler]. [cancel]/[shutdown] make in-flight callbacks no-ops so the
@@ -22,6 +23,8 @@ import java.util.concurrent.Executors
 class PhotoQuestionResponder {
 
     data class Request(
+        /** Content Uri supplied by the picker; retained for a future local/server responder. */
+        val imageUri: Uri,
         /** Display name of the picked image, used only to make the placeholder concrete. */
         val imageName: String,
         val question: String,
