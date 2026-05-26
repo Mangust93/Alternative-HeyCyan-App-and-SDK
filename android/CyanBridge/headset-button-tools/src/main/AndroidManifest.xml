@@ -15,8 +15,8 @@
             and does NOT touch :conversation-translation, the core app, the glasses SDK
             or the media flow.
 
-            exported=true is ONLY for manual launch via adb during testing:
-              adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.headset_button_tools.HeadsetButtonDiagnosticsActivity
+            This activity is internal to the host app; the tools shell uses its package-scoped action.
+            It remains non-exported so external apps cannot open the screen.
 
             IMPORTANT (release): the module is wired as debugImplementation only, so
             release builds never include it. To additionally drop it from a debug build:
@@ -24,7 +24,7 @@
         -->
         <activity
             android:name="com.fersaiyan.cyanbridge.headset_button_tools.HeadsetButtonDiagnosticsActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="Headset Button Diagnostics">
             <!--
                 Loosely-coupled in-app entry point. The core app opens this screen via

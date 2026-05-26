@@ -15,18 +15,18 @@
             On-device dialog translation with no Hermes and no OpenRouter:
             SpeechRecognizer -> ML Kit Language ID -> ML Kit Translation -> TextToSpeech.
 
-            exported=true is ONLY for manual launch via adb during testing:
-              adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.conversation_translation.ConversationTranslationActivity
+            This activity is internal to the host app; the tools shell uses its package-scoped action.
+            It remains non-exported so external apps cannot open the screen.
 
             IMPORTANT (release): this module is wired into :app as debugImplementation only
             (see app/build.gradle), so release builds never include it while it is gated by
             the `includeConversationTranslation` property. Before any release that ships this
             screen, either keep the module behind the flag, add a real in-app entry point, or
-            set android:exported="false" here.
+            keep android:exported="false" here.
         -->
         <activity
             android:name="com.fersaiyan.cyanbridge.conversation_translation.ConversationTranslationActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="Перевод диалога">
             <!--
                 Loosely-coupled in-app entry point. The core app opens this screen via

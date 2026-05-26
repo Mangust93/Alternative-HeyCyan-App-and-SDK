@@ -19,8 +19,8 @@
             NOT touch BLE / the media flow / the glasses SDK / :conversation-translation,
             and binds nothing to translation.
 
-            exported=true is ONLY for manual launch via adb during testing:
-              adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.glasses_button_event_tools.GlassesButtonEventDiagnosticsActivity
+            This activity is internal to the host app; the tools shell uses its package-scoped action.
+            It remains non-exported so external apps cannot open the screen.
 
             IMPORTANT (release): the module is wired as debugImplementation only, so
             release builds never include it. To additionally drop it from a debug build:
@@ -28,7 +28,7 @@
         -->
         <activity
             android:name="com.fersaiyan.cyanbridge.glasses_button_event_tools.GlassesButtonEventDiagnosticsActivity"
-            android:exported="true"
+            android:exported="false"
             android:label="Glasses Button Event Diagnostics">
             <!--
                 Loosely-coupled in-app entry point. The core app opens this screen via
