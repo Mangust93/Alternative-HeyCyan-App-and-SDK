@@ -33,8 +33,8 @@ import androidx.appcompat.app.AppCompatActivity
  *      answer today and is the single seam where a real backend call would slot in.
  *   4. Show the answer on screen.
  *
- * Launch via:
- *   adb shell am start -n com.fersaiyan.cyanbridge/com.fersaiyan.cyanbridge.photo_question_tools.PhotoQuestionActivity
+ * This internal screen is opened from Tools / Diagnostics through the package-scoped
+ * PHOTO_QUESTION intent action; it is deliberately not exported for adb/external launch.
  */
 class PhotoQuestionActivity : AppCompatActivity() {
 
@@ -178,7 +178,11 @@ class PhotoQuestionActivity : AppCompatActivity() {
         updateAskEnabled()
 
         responder.respond(
-            PhotoQuestionResponder.Request(imageName = selectedImageName, question = question),
+            PhotoQuestionResponder.Request(
+                imageUri = uri,
+                imageName = selectedImageName,
+                question = question,
+            ),
         ) { answer ->
             requestInFlight = false
             answerView.text = answer
