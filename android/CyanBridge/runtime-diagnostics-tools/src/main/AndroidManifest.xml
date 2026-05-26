@@ -39,7 +39,17 @@
         <activity
             android:name="com.fersaiyan.cyanbridge.runtime_diagnostics_tools.RuntimeDiagnosticsActivity"
             android:exported="true"
-            android:label="Runtime Diagnostics" />
+            android:label="Runtime Diagnostics">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.RUNTIME_DIAGNOSTICS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

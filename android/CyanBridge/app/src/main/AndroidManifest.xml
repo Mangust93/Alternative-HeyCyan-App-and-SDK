@@ -121,6 +121,11 @@
             android:label="Community Plugins" />
 
         <activity
+            android:name=".ui.tools.ToolsActivity"
+            android:exported="false"
+            android:label="@string/tools_title" />
+
+        <activity
             android:name=".ui.PublishPluginActivity"
             android:exported="false"
             android:label="Publish Plugin" />

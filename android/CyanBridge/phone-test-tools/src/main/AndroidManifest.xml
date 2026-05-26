@@ -17,7 +17,17 @@
         <activity
             android:name="com.fersaiyan.cyanbridge.phone_test_tools.PhoneTestDiagnosticsActivity"
             android:exported="true"
-            android:label="Phone Test / Debug" />
+            android:label="Phone Test / Debug">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.PHONE_TEST_TOOLS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

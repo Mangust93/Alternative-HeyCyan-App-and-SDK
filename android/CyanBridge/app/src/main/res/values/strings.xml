@@ -141,4 +141,31 @@
     <!-- Settings screen top header -->
     <string name="settings_privacy_title">Privacy Settings</string>
     <string name="settings_privacy_subtitle">Privacy-first defaults. Transcript storage is OFF by default.</string>
+
+    <!-- Tools / Diagnostics shell -->
+    <string name="tools_title">Tools / Diagnostics</string>
+    <string name="tools_subtitle">Optional, loosely-coupled feature modules. Cards that are unavailable are not built into this app.</string>
+    <string name="tools_open">Open</string>
+    <string name="tools_status_available">Available</string>
+    <string name="tools_status_unavailable">Module not included</string>
+    <string name="tools_launch_failed">Could not open module</string>
+
+    <!-- Settings entry card for the Tools screen -->
+    <string name="settings_tools_card_title">Tools / Diagnostics</string>
+    <string name="settings_tools_card_subtitle">Conversation translation, button diagnostics, debug logs, runtime diagnostics and phone tests.</string>
+    <string name="settings_tools_open">Open tools</string>
+
+    <!-- Feature cards -->
+    <string name="feature_conversation_translation_title">Conversation translation</string>
+    <string name="feature_conversation_translation_desc">On-device dialog translation (speech → translate → speech).</string>
+    <string name="feature_headset_button_title">Headset button diagnostics</string>
+    <string name="feature_headset_button_desc">Capture real key/media-button events from a headset.</string>
+    <string name="feature_glasses_button_title">Glasses button diagnostics</string>
+    <string name="feature_glasses_button_desc">Decode glasses button events from the BLE notify log.</string>
+    <string name="feature_debug_logs_title">Debug logs</string>
+    <string name="feature_debug_logs_desc">View recent diagnostic events and copy a bundle.</string>
+    <string name="feature_runtime_diagnostics_title">Runtime diagnostics</string>
+    <string name="feature_runtime_diagnostics_desc">App start, build/device facts, crashes and lifecycle.</string>
+    <string name="feature_phone_test_title">Phone test tools</string>
+    <string name="feature_phone_test_desc">Manual phone-side test and debug utilities.</string>
 </resources>

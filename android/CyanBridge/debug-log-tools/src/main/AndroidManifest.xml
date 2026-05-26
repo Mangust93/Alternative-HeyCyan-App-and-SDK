@@ -20,7 +20,17 @@
         <activity
             android:name="com.fersaiyan.cyanbridge.debug_log_tools.DebugLogActivity"
             android:exported="true"
-            android:label="Debug Log Tools" />
+            android:label="Debug Log Tools">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.DEBUG_LOGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

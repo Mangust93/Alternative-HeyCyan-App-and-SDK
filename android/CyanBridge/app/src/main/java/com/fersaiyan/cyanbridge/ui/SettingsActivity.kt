@@ -60,6 +60,7 @@ import com.fersaiyan.cyanbridge.ui.localagent.DailyFactsActivity
 import com.fersaiyan.cyanbridge.ui.localagent.DailySummaryActivity
 import com.fersaiyan.cyanbridge.ui.localagent.ScreenCapturesActivity
 import com.fersaiyan.cyanbridge.ui.localagent.PendingActionsActivity
+import com.fersaiyan.cyanbridge.ui.tools.ToolsActivity
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -136,6 +137,7 @@ Rules:
             stopButton = findViewById(R.id.btn_meeting_banner_stop)!!,
         )
 
+        bindToolsEntry()
         bindProviderTypeAndLocalAgentSettings()
         bindMemoryVaultSettings()
         refreshProSubscriptionBanner()
@@ -146,6 +148,12 @@ Rules:
         setupCollapsibleSections()
         refreshAgentStatusUi()
         setupBottomNavigation()
+    }
+
+    private fun bindToolsEntry() {
+        binding.btnOpenTools.setOnClickListener {
+            startActivity(Intent(this, ToolsActivity::class.java))
+        }
     }
 
     private fun setupCollapsibleSections() {

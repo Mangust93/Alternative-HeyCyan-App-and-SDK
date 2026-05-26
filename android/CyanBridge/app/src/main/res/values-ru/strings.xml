@@ -129,4 +129,31 @@
     <!-- Экран настроек – заголовок -->
     <string name="settings_privacy_title">Настройки конфиденциальности</string>
     <string name="settings_privacy_subtitle">Приватные настройки по умолчанию. Хранение транскрипций ВЫКЛЮЧЕНО.</string>
+
+    <!-- Инструменты / Диагностика -->
+    <string name="tools_title">Инструменты / Диагностика</string>
+    <string name="tools_subtitle">Опциональные слабосвязанные модули. Недоступные карточки не включены в эту сборку.</string>
+    <string name="tools_open">Открыть</string>
+    <string name="tools_status_available">Доступно</string>
+    <string name="tools_status_unavailable">Модуль не включён</string>
+    <string name="tools_launch_failed">Не удалось открыть модуль</string>
+
+    <!-- Карточка входа в Инструменты на экране настроек -->
+    <string name="settings_tools_card_title">Инструменты / Диагностика</string>
+    <string name="settings_tools_card_subtitle">Перевод диалога, диагностика кнопок, debug-логи, runtime-диагностика и тесты телефона.</string>
+    <string name="settings_tools_open">Открыть инструменты</string>
+
+    <!-- Карточки модулей -->
+    <string name="feature_conversation_translation_title">Перевод диалога</string>
+    <string name="feature_conversation_translation_desc">Перевод диалога на устройстве (речь → перевод → речь).</string>
+    <string name="feature_headset_button_title">Диагностика кнопки гарнитуры</string>
+    <string name="feature_headset_button_desc">Захват реальных key/media-событий гарнитуры.</string>
+    <string name="feature_glasses_button_title">Диагностика кнопок очков</string>
+    <string name="feature_glasses_button_desc">Расшифровка событий кнопок очков из BLE-notify лога.</string>
+    <string name="feature_debug_logs_title">Debug-логи</string>
+    <string name="feature_debug_logs_desc">Просмотр последних диагностических событий и копирование.</string>
+    <string name="feature_runtime_diagnostics_title">Runtime-диагностика</string>
+    <string name="feature_runtime_diagnostics_desc">Старт приложения, сведения о сборке/устройстве, сбои.</string>
+    <string name="feature_phone_test_title">Тесты телефона</string>
+    <string name="feature_phone_test_desc">Ручные утилиты тестирования и отладки на телефоне.</string>
 </resources>

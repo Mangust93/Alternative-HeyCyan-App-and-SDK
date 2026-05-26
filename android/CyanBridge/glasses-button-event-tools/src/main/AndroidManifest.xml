@@ -29,7 +29,17 @@
         <activity
             android:name="com.fersaiyan.cyanbridge.glasses_button_event_tools.GlassesButtonEventDiagnosticsActivity"
             android:exported="true"
-            android:label="Glasses Button Event Diagnostics" />
+            android:label="Glasses Button Event Diagnostics">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.GLASSES_BUTTON_EVENT_DIAGNOSTIC" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

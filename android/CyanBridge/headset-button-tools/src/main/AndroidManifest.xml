@@ -25,7 +25,17 @@
         <activity
             android:name="com.fersaiyan.cyanbridge.headset_button_tools.HeadsetButtonDiagnosticsActivity"
             android:exported="true"
-            android:label="Headset Button Diagnostics" />
+            android:label="Headset Button Diagnostics">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.HEADSET_BUTTON_DIAGNOSTIC" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
