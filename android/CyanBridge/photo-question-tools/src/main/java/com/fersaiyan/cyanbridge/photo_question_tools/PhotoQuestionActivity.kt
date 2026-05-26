@@ -12,7 +12,6 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -53,7 +52,6 @@ class PhotoQuestionActivity : AppCompatActivity() {
     private var selectedImageName: String = ""
     private var requestInFlight = false
 
-    private lateinit var imagePreview: ImageView
     private lateinit var imageStatus: TextView
     private lateinit var questionInput: EditText
     private lateinit var askButton: Button
@@ -113,14 +111,6 @@ class PhotoQuestionActivity : AppCompatActivity() {
             setPadding(0, gap, 0, gap)
         }
         root.addView(imageStatus)
-
-        imagePreview = ImageView(this).apply {
-            adjustViewBounds = true
-            visibility = View.GONE
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, (220 * density).toInt())
-            scaleType = ImageView.ScaleType.FIT_CENTER
-        }
-        root.addView(imagePreview)
 
         root.addView(TextView(this).apply {
             text = "Вопрос"
@@ -319,9 +309,8 @@ class PhotoQuestionActivity : AppCompatActivity() {
         selectedImage = uri
         selectedImageName = queryDisplayName(uri)
         imageStatus.text = "Фото: $selectedImageName"
-        runCatching { imagePreview.setImageURI(uri) }
-            .onSuccess { imagePreview.visibility = View.VISIBLE }
-            .onFailure { imagePreview.visibility = View.GONE }
+        // Do not decode an arbitrary provider image on the UI thread before the bounded
+        // background reader validates its size. The selected-name status is sufficient here.
         updateAskEnabled()
     }
 

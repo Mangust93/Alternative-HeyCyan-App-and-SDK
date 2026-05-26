@@ -110,7 +110,7 @@ class PhotoQuestionResponder(context: Context) {
         }.getOrElse { error ->
             when (error) {
                 is PhotoQuestionException -> error.message ?: "Ошибка запроса к OpenRouter."
-                else -> "Ошибка запроса к OpenRouter: ${error.message ?: "неизвестная ошибка"}"
+                else -> "Не удалось выполнить запрос к OpenRouter."
             }
         }
     }
@@ -123,7 +123,9 @@ class PhotoQuestionResponder(context: Context) {
      * unreadable or too large — never an OOM from slurping a huge file.
      */
     private fun readImageBytes(uri: Uri): ImageData {
-        val mimeType = appContext.contentResolver.getType(uri) ?: DEFAULT_MIME
+        val mimeType = appContext.contentResolver.getType(uri)
+            ?.takeIf { it.startsWith("image/") }
+            ?: DEFAULT_MIME
         val input = appContext.contentResolver.openInputStream(uri)
             ?: throw PhotoQuestionException("Не удалось открыть выбранное фото.")
 
