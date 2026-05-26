@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+        OpenRouter Direct answer mode calls https://openrouter.ai over HTTPS from the
+        device, so this optional module declares INTERNET itself. It is contributed to the
+        merged manifest only when the module is included (default debug build); with
+        -PincludePhotoQuestionTools=false the module — and this permission line — are absent
+        from the build entirely. (The host app may declare INTERNET for its own reasons;
+        that is independent of this module.)
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application>
         <!--
             Photo question screen.

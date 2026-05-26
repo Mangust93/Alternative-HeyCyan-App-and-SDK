@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -13,6 +14,8 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -29,16 +32,22 @@ import androidx.appcompat.app.AppCompatActivity
  *   1. Pick a photo with the system photo picker (GetContent — no storage permission;
  *      the picker also lists photos already downloaded from the glasses into the gallery).
  *   2. Type a text question about it.
- *   3. Send to [PhotoQuestionResponder] — a mock/server placeholder that returns a local
- *      answer today and is the single seam where a real backend call would slot in.
+ *   3. Send to [PhotoQuestionResponder], which answers either with a local Mock placeholder
+ *      (default) or, in OpenRouter Direct mode, by calling OpenRouter with the user's own
+ *      API key and model id (see the settings panel below).
  *   4. Show the answer on screen.
+ *
+ * Answer settings (mode, OpenRouter API key, model id) are stored locally by
+ * [PhotoQuestionSettings] in this module's own SharedPreferences. The key is user-supplied,
+ * never bundled, never logged, and shown only masked once saved.
  *
  * This internal screen is opened from Tools / Diagnostics through the package-scoped
  * PHOTO_QUESTION intent action; it is deliberately not exported for adb/external launch.
  */
 class PhotoQuestionActivity : AppCompatActivity() {
 
-    private val responder = PhotoQuestionResponder()
+    private val settings by lazy { PhotoQuestionSettings(this) }
+    private val responder by lazy { PhotoQuestionResponder(this) }
 
     private var selectedImage: Uri? = null
     private var selectedImageName: String = ""
@@ -49,6 +58,14 @@ class PhotoQuestionActivity : AppCompatActivity() {
     private lateinit var questionInput: EditText
     private lateinit var askButton: Button
     private lateinit var answerView: TextView
+
+    private lateinit var modeGroup: RadioGroup
+    private lateinit var mockRadio: RadioButton
+    private lateinit var openRouterRadio: RadioButton
+    private lateinit var credentialsPanel: LinearLayout
+    private lateinit var apiKeyInput: EditText
+    private lateinit var modelIdInput: EditText
+    private lateinit var keyStatusView: TextView
 
     private val pickImage =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -77,11 +94,13 @@ class PhotoQuestionActivity : AppCompatActivity() {
 
         root.addView(TextView(this).apply {
             text = "Выберите фото (включая фото, скачанные с очков), задайте вопрос " +
-                "текстом и получите ответ. Сейчас ответ — это заглушка/placeholder; " +
-                "позже на его месте будет ответ сервера."
+                "текстом и получите ответ. По умолчанию ответ — это локальная заглушка " +
+                "(режим Mock). Для настоящего ответа включите режим OpenRouter Direct ниже."
             textSize = 14f
             setPadding(0, 0, 0, gap)
         })
+
+        addSettingsPanel(root, gap)
 
         root.addView(Button(this).apply {
             text = "Выбрать фото"
@@ -143,7 +162,145 @@ class PhotoQuestionActivity : AppCompatActivity() {
         val scroll = ScrollView(this).apply { addView(root) }
         setContentView(scroll, LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
 
+        bindSettings()
         updateAskEnabled()
+    }
+
+    private fun addSettingsPanel(root: LinearLayout, gap: Int) {
+        root.addView(TextView(this).apply {
+            text = "Режим ответа"
+            setTypeface(typeface, Typeface.BOLD)
+            setPadding(0, gap, 0, gap)
+        })
+
+        mockRadio = RadioButton(this).apply {
+            id = View.generateViewId()
+            text = "Mock (локальная заглушка)"
+        }
+        openRouterRadio = RadioButton(this).apply {
+            id = View.generateViewId()
+            text = "OpenRouter Direct (свой ключ)"
+        }
+        modeGroup = RadioGroup(this).apply {
+            orientation = RadioGroup.VERTICAL
+            addView(mockRadio)
+            addView(openRouterRadio)
+            setOnCheckedChangeListener { _, checkedId ->
+                val mode = if (checkedId == openRouterRadio.id) {
+                    PhotoQuestionSettings.Mode.OPENROUTER_DIRECT
+                } else {
+                    PhotoQuestionSettings.Mode.MOCK
+                }
+                settings.mode = mode
+                updateCredentialsVisibility(mode)
+                updateAskEnabled()
+            }
+        }
+        root.addView(modeGroup)
+
+        credentialsPanel = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+        }
+
+        credentialsPanel.addView(TextView(this).apply {
+            text = "OpenRouter API ключ"
+            textSize = 13f
+            setPadding(0, gap, 0, 0)
+        })
+        apiKeyInput = EditText(this).apply {
+            hint = "sk-or-..."
+            textSize = 14f
+            // VISIBLE_PASSWORD keeps the key readable for pasting but stops the keyboard
+            // from learning/suggesting it; combined with no multiline.
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        }
+        credentialsPanel.addView(apiKeyInput)
+
+        keyStatusView = TextView(this).apply {
+            textSize = 12f
+            setPadding(0, 0, 0, gap)
+        }
+        credentialsPanel.addView(keyStatusView)
+
+        credentialsPanel.addView(TextView(this).apply {
+            text = "Model id"
+            textSize = 13f
+        })
+        modelIdInput = EditText(this).apply {
+            hint = "например: openai/gpt-4o-mini"
+            textSize = 14f
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            setSingleLine(true)
+        }
+        credentialsPanel.addView(modelIdInput)
+
+        val buttonRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(0, gap, 0, 0)
+        }
+        buttonRow.addView(Button(this).apply {
+            text = "Сохранить настройки"
+            setOnClickListener { onSaveSettings() }
+        }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        buttonRow.addView(Button(this).apply {
+            text = "Очистить ключ"
+            setOnClickListener { onClearKey() }
+        }, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        credentialsPanel.addView(buttonRow)
+
+        credentialsPanel.addView(TextView(this).apply {
+            text = "Внимание: ключ хранится локально на этом устройстве (без шифрования). " +
+                "Не используйте ключ с большим лимитом — задайте отдельный ключ с " +
+                "ограничением расходов. Ключ не логируется и не показывается полностью."
+            textSize = 12f
+            setPadding(0, gap, 0, gap)
+        })
+
+        root.addView(credentialsPanel)
+    }
+
+    /** Initialise the settings widgets from stored values. The raw key is never prefilled. */
+    private fun bindSettings() {
+        val mode = settings.mode
+        when (mode) {
+            PhotoQuestionSettings.Mode.MOCK -> mockRadio.isChecked = true
+            PhotoQuestionSettings.Mode.OPENROUTER_DIRECT -> openRouterRadio.isChecked = true
+        }
+        modelIdInput.setText(settings.modelId)
+        updateKeyStatus()
+        updateCredentialsVisibility(mode)
+    }
+
+    private fun updateCredentialsVisibility(mode: PhotoQuestionSettings.Mode) {
+        credentialsPanel.visibility =
+            if (mode == PhotoQuestionSettings.Mode.OPENROUTER_DIRECT) View.VISIBLE else View.GONE
+    }
+
+    private fun onSaveSettings() {
+        val key = apiKeyInput.text?.toString().orEmpty()
+        val model = modelIdInput.text?.toString().orEmpty()
+        // An empty key field on save keeps any previously saved key rather than wiping it.
+        val effectiveKey = key.trim().ifEmpty { settings.apiKey }
+        settings.saveCredentials(effectiveKey, model)
+        // Drop the raw key from the input so it does not linger on screen.
+        apiKeyInput.text?.clear()
+        modelIdInput.setText(settings.modelId)
+        updateKeyStatus()
+        answerView.text = "Настройки сохранены."
+        updateAskEnabled()
+    }
+
+    private fun onClearKey() {
+        settings.clearApiKey()
+        apiKeyInput.text?.clear()
+        updateKeyStatus()
+        answerView.text = "Ключ удалён с устройства."
+        updateAskEnabled()
+    }
+
+    private fun updateKeyStatus() {
+        keyStatusView.text = "Сохранённый ключ: ${settings.maskedApiKey()}"
     }
 
     override fun onDestroy() {
@@ -173,8 +330,23 @@ class PhotoQuestionActivity : AppCompatActivity() {
         val question = questionInput.text?.toString()?.trim().orEmpty()
         if (question.isEmpty() || requestInFlight) return
 
+        val mode = settings.mode
+        if (mode == PhotoQuestionSettings.Mode.OPENROUTER_DIRECT) {
+            if (!settings.hasApiKey) {
+                answerView.text = "Не задан OpenRouter API ключ. Сохраните ключ в настройках."
+                return
+            }
+            if (settings.modelId.isEmpty()) {
+                answerView.text = "Не задан model id. Укажите модель в настройках."
+                return
+            }
+        }
+
         requestInFlight = true
-        answerView.text = "Запрос отправлен (заглушка)…"
+        answerView.text = when (mode) {
+            PhotoQuestionSettings.Mode.MOCK -> "Запрос отправлен (заглушка)…"
+            PhotoQuestionSettings.Mode.OPENROUTER_DIRECT -> "Запрос отправлен в OpenRouter…"
+        }
         updateAskEnabled()
 
         responder.respond(
