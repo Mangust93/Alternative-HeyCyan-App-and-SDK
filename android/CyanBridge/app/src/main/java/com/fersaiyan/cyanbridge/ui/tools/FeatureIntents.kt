@@ -21,4 +21,6 @@ object FeatureIntents {
         "com.fersaiyan.cyanbridge.feature.RUNTIME_DIAGNOSTICS"
     const val PHONE_TEST_TOOLS =
         "com.fersaiyan.cyanbridge.feature.PHONE_TEST_TOOLS"
+    const val PHOTO_QUESTION =
+        "com.fersaiyan.cyanbridge.feature.PHOTO_QUESTION"
 }

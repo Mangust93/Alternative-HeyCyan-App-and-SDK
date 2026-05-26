@@ -217,6 +217,19 @@ dependencies {
         logger.lifecycle("includeGlassesButtonEventTools=false; skipping :glasses-button-event-tools dependency")
     }
 
+    // Optional "photo question" feature module. Self-contained flow: pick a photo
+    // (incl. photos downloaded from the glasses), ask a text question, get an answer
+    // from a mock/server placeholder, show it on screen. No dependency on the glasses
+    // SDK, BLE, the media flow or :conversation-translation; ships no networking.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludePhotoQuestionTools=false
+    def includePhotoQuestionTools = providers.gradleProperty("includePhotoQuestionTools").orElse("true").get().toBoolean()
+    if (includePhotoQuestionTools) {
+        debugImplementation project(":photo-question-tools")
+    } else {
+        logger.lifecycle("includePhotoQuestionTools=false; skipping :photo-question-tools dependency")
+    }
+
     // Chapter 2 storage
     def room_version = "2.7.0"
     implementation "androidx.room:room-runtime:$room_version"

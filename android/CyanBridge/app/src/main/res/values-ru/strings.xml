@@ -156,4 +156,6 @@
     <string name="feature_runtime_diagnostics_desc">Старт приложения, сведения о сборке/устройстве, сбои.</string>
     <string name="feature_phone_test_title">Тесты телефона</string>
     <string name="feature_phone_test_desc">Ручные утилиты тестирования и отладки на телефоне.</string>
+    <string name="feature_photo_question_title">Фото и вопрос</string>
+    <string name="feature_photo_question_desc">Выберите фото, задайте вопрос текстом, получите ответ-заглушку.</string>
 </resources>

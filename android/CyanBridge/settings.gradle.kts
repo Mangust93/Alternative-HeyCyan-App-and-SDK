@@ -75,6 +75,18 @@ if (includeGlassesButtonEventTools) {
     include(":glasses-button-event-tools")
 }
 
+// Optional "photo question" feature. Self-contained flow: pick a photo (incl. photos
+// downloaded from the glasses), ask a text question, get an answer from a mock/server
+// placeholder, show it on screen. Standalone: depends on neither :app, the glasses SDK,
+// BLE, the media flow nor :conversation-translation, and ships no networking dependency.
+// Wired into :app only as a debugImplementation and only when the
+// `includePhotoQuestionTools` Gradle property is true (default). See app/build.gradle.
+val includePhotoQuestionTools =
+    providers.gradleProperty("includePhotoQuestionTools").orElse("true").get().toBoolean()
+if (includePhotoQuestionTools) {
+    include(":photo-question-tools")
+}
+
 // HeyCyan Core - bundled as composite build for easy compilation
 val heycyanCoreDir = file("../../heycyan-core")
 if (heycyanCoreDir.exists()) {

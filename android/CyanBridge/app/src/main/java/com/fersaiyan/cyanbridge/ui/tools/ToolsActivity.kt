@@ -66,6 +66,11 @@ class ToolsActivity : AppCompatActivity() {
             R.string.feature_phone_test_desc,
             FeatureIntents.PHONE_TEST_TOOLS,
         ),
+        FeatureEntry(
+            R.string.feature_photo_question_title,
+            R.string.feature_photo_question_desc,
+            FeatureIntents.PHOTO_QUESTION,
+        ),
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {

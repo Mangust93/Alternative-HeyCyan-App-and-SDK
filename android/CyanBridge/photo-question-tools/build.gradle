@@ -1,0 +1,50 @@
+// Optional "photo question" feature module.
+//
+// Standalone Android library: it does NOT depend on :app, the glasses SDK
+// (com.oudmon.ble.*), BLE, the media flow or any other optional module. Its single
+// job is one self-contained flow for a tester / early user:
+//   pick a photo (from the gallery — including photos already downloaded from the
+//   glasses) -> type a text question about it -> send to a mock/server placeholder
+//   -> show the placeholder answer on screen.
+//
+// The "send" step goes through PhotoQuestionResponder, a deliberately swappable seam:
+// today it returns a deterministic local placeholder; a real server call would slot
+// in there without touching the Activity. The module ships NO networking dependency
+// so it cannot accidentally talk to a backend yet.
+//
+// It is wired into :app only as a debugImplementation and only when the
+// `includePhotoQuestionTools` Gradle property is true (default). See app/build.gradle.
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.fersaiyan.cyanbridge.photo_question_tools'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // AppCompatActivity + the Activity Result APIs (registerForActivityResult /
+    // ActivityResultContracts.GetContent) only. Intentionally minimal: no
+    // project(":app"), no glasses SDK, no BLE, no networking. The system photo
+    // picker (GetContent) needs no storage permission.
+    //
+    // Only appcompat is declared: it transitively provides androidx.activity (the home
+    // of registerForActivityResult / ActivityResultContracts). We deliberately do NOT
+    // add androidx.activity:activity-ktx — pulling a newer activity version would bump
+    // it app-wide and break :app's existing nullable onNewIntent(Intent?) overrides.
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+}

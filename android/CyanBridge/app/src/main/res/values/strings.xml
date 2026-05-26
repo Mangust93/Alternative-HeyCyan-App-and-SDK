@@ -168,4 +168,6 @@
     <string name="feature_runtime_diagnostics_desc">App start, build/device facts, crashes and lifecycle.</string>
     <string name="feature_phone_test_title">Phone test tools</string>
     <string name="feature_phone_test_desc">Manual phone-side test and debug utilities.</string>
+    <string name="feature_photo_question_title">Photo question</string>
+    <string name="feature_photo_question_desc">Pick a photo, ask a text question, get a placeholder answer.</string>
 </resources>
