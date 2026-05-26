@@ -3,6 +3,7 @@ package com.fersaiyan.cyanbridge.photo_question_tools
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
@@ -29,6 +30,7 @@ internal object OpenRouterClient {
     private const val ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
     private const val CONNECT_TIMEOUT_MS = 20_000
     private const val READ_TIMEOUT_MS = 60_000
+    private const val MAX_RESPONSE_BYTES = 1024 * 1024
 
     data class Params(
         val apiKey: String,
@@ -50,15 +52,16 @@ internal object OpenRouterClient {
             val status = readStatus(connection)
             val payload = readPayload(connection, status)
             if (status != HttpURLConnection.HTTP_OK) {
-                throw PhotoQuestionException(mapHttpError(status, payload))
+                throw PhotoQuestionException(mapHttpError(status, payload, params.apiKey))
             }
-            return parseAnswer(payload)
+            return parseAnswer(payload, params.apiKey)
         } catch (e: SocketTimeoutException) {
             throw PhotoQuestionException("Превышено время ожидания ответа OpenRouter. Попробуйте ещё раз.")
         } catch (e: UnknownHostException) {
             throw PhotoQuestionException("Нет подключения к интернету или сервер недоступен.")
         } catch (e: IOException) {
-            throw PhotoQuestionException("Сетевая ошибка при обращении к OpenRouter: ${e.message ?: "неизвестно"}")
+            val detail = redactSecret(e.message ?: "неизвестно", params.apiKey)
+            throw PhotoQuestionException("Сетевая ошибка при обращении к OpenRouter: $detail")
         } finally {
             connection.disconnect()
         }
@@ -116,17 +119,32 @@ internal object OpenRouterClient {
     private fun readPayload(connection: HttpURLConnection, status: Int): String {
         val stream = if (status in 200..299) connection.inputStream else connection.errorStream
         return stream?.use { input ->
-            input.readBytes().toString(Charsets.UTF_8)
+            val output = ByteArrayOutputStream()
+            val buffer = ByteArray(8 * 1024)
+            var total = 0
+            while (true) {
+                val read = input.read(buffer)
+                if (read == -1) break
+                total += read
+                if (total > MAX_RESPONSE_BYTES) {
+                    throw PhotoQuestionException("Ответ OpenRouter слишком большой и был отклонён.")
+                }
+                output.write(buffer, 0, read)
+            }
+            output.toByteArray().toString(Charsets.UTF_8)
         }.orEmpty()
     }
 
-    private fun parseAnswer(payload: String): String {
+    private fun parseAnswer(payload: String, apiKey: String): String {
         val root = runCatching { JSONObject(payload) }.getOrNull()
             ?: throw PhotoQuestionException("Не удалось разобрать ответ OpenRouter (некорректный JSON).")
 
         // An HTTP 200 can still carry an { "error": ... } object for some failures.
         root.optJSONObject("error")?.let { error ->
-            val message = error.optString("message").ifBlank { "неизвестная ошибка" }
+            val message = redactSecret(
+                error.optString("message").ifBlank { "неизвестная ошибка" },
+                apiKey,
+            )
             throw PhotoQuestionException("OpenRouter вернул ошибку: $message")
         }
 
@@ -163,8 +181,8 @@ internal object OpenRouterClient {
         }
     }
 
-    private fun mapHttpError(status: Int, payload: String): String {
-        val detail = extractErrorMessage(payload)
+    private fun mapHttpError(status: Int, payload: String, apiKey: String): String {
+        val detail = extractErrorMessage(payload)?.let { redactSecret(it, apiKey) }
         val base = when (status) {
             HttpURLConnection.HTTP_UNAUTHORIZED ->
                 "Неверный или отсутствующий API ключ (401)."
@@ -189,6 +207,9 @@ internal object OpenRouterClient {
             JSONObject(payload).optJSONObject("error")?.optString("message")
         }.getOrNull()?.takeIf { it.isNotBlank() }
     }
+
+    private fun redactSecret(text: String, apiKey: String): String =
+        if (apiKey.isBlank()) text else text.replace(apiKey, "[ключ скрыт]")
 }
 
 /** Carries a user-ready (Russian) message; thrown by [OpenRouterClient]. */
