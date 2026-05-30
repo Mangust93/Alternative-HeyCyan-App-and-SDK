@@ -1,9 +1,11 @@
 package com.fersaiyan.cyanbridge.ai_user_shell
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -194,14 +196,16 @@ class AiUserShellActivity : AppCompatActivity() {
     }
 
     private fun featureIntent(action: String): Intent =
-        Intent(action).setPackage(packageName)
+        Intent(action)
+            .setPackage(packageName)
+            .addCategory(Intent.CATEGORY_DEFAULT)
 
     private fun isActionAvailable(action: String): Boolean =
-        packageManager.resolveActivity(featureIntent(action), 0) != null
+        resolveFeatureActivity(featureIntent(action))
 
     private fun openAction(action: String) {
         val intent = featureIntent(action)
-        if (packageManager.resolveActivity(intent, 0) == null) {
+        if (!resolveFeatureActivity(intent)) {
             Toast.makeText(this, "Модуль не включён", Toast.LENGTH_SHORT).show()
             renderCards()
             return
@@ -211,6 +215,17 @@ class AiUserShellActivity : AppCompatActivity() {
                 Toast.makeText(this, "Не удалось открыть функцию", Toast.LENGTH_SHORT).show()
             }
     }
+
+    private fun resolveFeatureActivity(intent: Intent): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.resolveActivity(
+                intent,
+                PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()),
+            ) != null
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null
+        }
 
     private fun dp(value: Int): Int = (value * density).toInt()
 }

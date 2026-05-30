@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -168,9 +169,12 @@ Rules:
      * so the core app keeps working without it.
      */
     private fun bindAiAssistantEntry() {
-        val intent = Intent(FeatureIntents.AI_USER_SHELL).setPackage(packageName)
-        if (packageManager.resolveActivity(intent, 0) == null) {
+        val intent = Intent(FeatureIntents.AI_USER_SHELL)
+            .setPackage(packageName)
+            .addCategory(Intent.CATEGORY_DEFAULT)
+        if (!resolveAiAssistantEntry(intent)) {
             binding.cardAiAssistantEntry.visibility = View.GONE
+            binding.btnOpenAiAssistant.setOnClickListener(null)
             return
         }
         binding.cardAiAssistantEntry.visibility = View.VISIBLE
@@ -181,6 +185,17 @@ Rules:
                 }
         }
     }
+
+    private fun resolveAiAssistantEntry(intent: Intent): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.resolveActivity(
+                intent,
+                PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()),
+            ) != null
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null
+        }
 
     private fun setupCollapsibleSections() {
         setupCollapsibleSection(
