@@ -230,6 +230,21 @@ dependencies {
         logger.lifecycle("includePhotoQuestionTools=false; skipping :photo-question-tools dependency")
     }
 
+    // Optional ":ai-user-shell" module — the first user-facing AI section of the app
+    // ("AI-функции" / "AI ассистент"). Routes to the already-shipping AI features via
+    // package-scoped Intent actions only; depends on neither :app nor the feature modules
+    // it launches, so it degrades to "Модуль не включён" cards when they are toggled out.
+    // The user-facing counterpart to the debug "Инструменты / Диагностика" shell, which is
+    // left untouched. The host app opens it via the AI_USER_SHELL action (no class import).
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeAiUserShell=false
+    def includeAiUserShell = providers.gradleProperty("includeAiUserShell").orElse("true").get().toBoolean()
+    if (includeAiUserShell) {
+        debugImplementation project(":ai-user-shell")
+    } else {
+        logger.lifecycle("includeAiUserShell=false; skipping :ai-user-shell dependency")
+    }
+
     // Chapter 2 storage
     def room_version = "2.7.0"
     implementation "androidx.room:room-runtime:$room_version"

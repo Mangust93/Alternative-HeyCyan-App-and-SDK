@@ -23,4 +23,12 @@ object FeatureIntents {
         "com.fersaiyan.cyanbridge.feature.PHONE_TEST_TOOLS"
     const val PHOTO_QUESTION =
         "com.fersaiyan.cyanbridge.feature.PHOTO_QUESTION"
+
+    /**
+     * User-facing AI shell ("AI-функции" / "AI ассистент"), provided by the optional
+     * :ai-user-shell module. Unlike the entries above, this is opened from the normal
+     * user UI (a Settings card), not only from the debug Tools / Diagnostics shell.
+     */
+    const val AI_USER_SHELL =
+        "com.fersaiyan.cyanbridge.feature.AI_USER_SHELL"
 }

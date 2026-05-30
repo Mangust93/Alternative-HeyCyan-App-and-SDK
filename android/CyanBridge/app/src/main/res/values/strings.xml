@@ -155,6 +155,11 @@
     <string name="settings_tools_card_subtitle">Conversation translation, button diagnostics, debug logs, runtime diagnostics and phone tests.</string>
     <string name="settings_tools_open">Open tools</string>
 
+    <!-- User-facing AI shell (:ai-user-shell) entry. Separate from the debug Tools card. -->
+    <string name="settings_ai_assistant_card_title">AI-функции</string>
+    <string name="settings_ai_assistant_card_subtitle">Переводчик, фото и вопрос и другие AI-функции в одном месте.</string>
+    <string name="settings_ai_assistant_open">Открыть AI-функции</string>
+
     <!-- Feature cards -->
     <string name="feature_conversation_translation_title">Conversation translation</string>
     <string name="feature_conversation_translation_desc">On-device dialog translation (speech → translate → speech).</string>

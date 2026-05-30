@@ -151,6 +151,57 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!--
+                AI-функции entry — the user-facing AI shell (:ai-user-shell), opened via
+                the package-scoped AI_USER_SHELL intent action. This is a SEPARATE, normal
+                user entry point; the debug "Инструменты / Диагностика" card below stays as
+                the tester/debug shell. The whole card is hidden when the optional module is
+                toggled out of the build (-PincludeAiUserShell=false).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_ai_assistant_entry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_ai_assistant_card_title"
+                        android:textColor="@color/cyan_accent"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:letterSpacing="0.1" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/settings_ai_assistant_card_subtitle"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_open_ai_assistant"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/settings_ai_assistant_open"
+                        android:textColor="@color/cyan_accent"
+                        app:strokeColor="@color/cyan_accent" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Tools / Diagnostics entry (opens the loosely-coupled feature shell) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/card_tools_entry"

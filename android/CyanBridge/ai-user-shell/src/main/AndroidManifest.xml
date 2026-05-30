@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        No permissions are declared here on purpose. This shell only launches other
+        screens through package-scoped Intent actions; it performs no networking,
+        microphone, storage or BLE work of its own.
+    -->
+
+    <application>
+        <!--
+            AI user shell screen ("AI-функции" / "AI ассистент").
+
+            The first user-facing AI section of the app. It shows simple cards that route
+            to the already-shipping AI features (conversation translation, photo question)
+            via package-scoped Intent actions only — it never references those modules'
+            classes, and checks resolveActivity first so a card degrades to
+            "Модуль не включён" when its feature module is toggled out of the build.
+
+            This activity is internal to the host app; the host opens it via its
+            package-scoped AI_USER_SHELL action only. It is non-exported so external apps
+            cannot open the screen.
+
+            IMPORTANT (release): the module is wired as debugImplementation only, so
+            release builds never include it. To additionally drop it from a debug build:
+              ./gradlew :app:assembleDebug -PincludeAiUserShell=false
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.ai_user_shell.AiUserShellActivity"
+            android:exported="false"
+            android:label="AI-функции">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.AI_USER_SHELL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

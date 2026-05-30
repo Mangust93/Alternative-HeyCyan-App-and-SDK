@@ -87,6 +87,21 @@ if (includePhotoQuestionTools) {
     include(":photo-question-tools")
 }
 
+// Optional ":ai-user-shell" module — the first user-facing AI section of the app
+// ("AI-функции" / "AI ассистент"). It shows simple cards that route to the already-
+// shipping AI features (conversation translation, photo question) via package-scoped
+// Intent actions only. It depends on neither :app nor the feature modules it launches,
+// so it stays loosely coupled and degrades to "Модуль не включён" cards when those
+// modules are toggled out of the build. This is the user-facing counterpart to the debug
+// "Инструменты / Диагностика" shell, which is left untouched. Wired into :app only as a
+// debugImplementation and only when the `includeAiUserShell` Gradle property is true
+// (default). See app/build.gradle.
+val includeAiUserShell =
+    providers.gradleProperty("includeAiUserShell").orElse("true").get().toBoolean()
+if (includeAiUserShell) {
+    include(":ai-user-shell")
+}
+
 // HeyCyan Core - bundled as composite build for easy compilation
 val heycyanCoreDir = file("../../heycyan-core")
 if (heycyanCoreDir.exists()) {

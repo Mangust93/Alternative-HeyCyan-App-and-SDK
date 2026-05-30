@@ -1,0 +1,45 @@
+// Optional ":ai-user-shell" module — the first user-facing AI section of the app.
+//
+// Standalone Android library. Like the other optional modules it does NOT depend on
+// :app, the glasses SDK (com.oudmon.ble.*), BLE, the media flow, OpenRouter, networking
+// or any other optional module. Crucially it ALSO does not depend on the feature modules
+// whose screens it launches (:conversation-translation, :photo-question-tools): it opens
+// them only through package-scoped Intent actions checked with resolveActivity, so it
+// keeps working (showing "Модуль не включён" cards) even when those modules are toggled
+// out of the build.
+//
+// Its single job is to present a normal user-facing "AI-функции" / "AI ассистент" screen
+// with cards that route to the already-shipping AI features. It is the user-facing
+// counterpart to the debug "Инструменты / Диагностика" shell, which stays untouched.
+//
+// It is wired into :app only as a debugImplementation and only when the
+// `includeAiUserShell` Gradle property is true (default). See app/build.gradle.
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.fersaiyan.cyanbridge.ai_user_shell'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // AppCompatActivity only. Intentionally minimal: no project(":app"), no glasses SDK,
+    // no BLE, no networking, and deliberately NO dependency on :conversation-translation
+    // or :photo-question-tools — those screens are reached only via Intent action so this
+    // shell stays loosely coupled and degrades gracefully when they are absent.
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+}

@@ -60,6 +60,7 @@ import com.fersaiyan.cyanbridge.ui.localagent.DailyFactsActivity
 import com.fersaiyan.cyanbridge.ui.localagent.DailySummaryActivity
 import com.fersaiyan.cyanbridge.ui.localagent.ScreenCapturesActivity
 import com.fersaiyan.cyanbridge.ui.localagent.PendingActionsActivity
+import com.fersaiyan.cyanbridge.ui.tools.FeatureIntents
 import com.fersaiyan.cyanbridge.ui.tools.ToolsActivity
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.CoroutineScope
@@ -137,6 +138,7 @@ Rules:
             stopButton = findViewById(R.id.btn_meeting_banner_stop)!!,
         )
 
+        bindAiAssistantEntry()
         bindToolsEntry()
         bindProviderTypeAndLocalAgentSettings()
         bindMemoryVaultSettings()
@@ -153,6 +155,30 @@ Rules:
     private fun bindToolsEntry() {
         binding.btnOpenTools.setOnClickListener {
             startActivity(Intent(this, ToolsActivity::class.java))
+        }
+    }
+
+    /**
+     * User-facing entry point to the AI shell (:ai-user-shell), the normal-user
+     * counterpart to the debug "Инструменты / Диагностика" card.
+     *
+     * Loosely coupled: the screen is opened with a package-scoped Intent(action) only —
+     * SettingsActivity never references AiUserShellActivity — and the whole card is hidden
+     * when the optional module is absent (release builds, or -PincludeAiUserShell=false),
+     * so the core app keeps working without it.
+     */
+    private fun bindAiAssistantEntry() {
+        val intent = Intent(FeatureIntents.AI_USER_SHELL).setPackage(packageName)
+        if (packageManager.resolveActivity(intent, 0) == null) {
+            binding.cardAiAssistantEntry.visibility = View.GONE
+            return
+        }
+        binding.cardAiAssistantEntry.visibility = View.VISIBLE
+        binding.btnOpenAiAssistant.setOnClickListener {
+            runCatching { startActivity(intent) }
+                .onFailure {
+                    Toast.makeText(this, R.string.tools_launch_failed, Toast.LENGTH_SHORT).show()
+                }
         }
     }
 
