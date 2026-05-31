@@ -62,8 +62,8 @@ class AiUserShellActivity : AppCompatActivity() {
         ),
         Card(
             title = "Настройки AI",
-            description = "Будет добавлено позже",
-            action = null,
+            description = "OpenRouter API key и модель",
+            action = FeatureActions.AI_SETTINGS,
         ),
     )
 
@@ -196,16 +196,18 @@ class AiUserShellActivity : AppCompatActivity() {
     }
 
     private fun featureIntent(action: String): Intent =
-        Intent(action)
+        if (action == FeatureActions.AI_SETTINGS) {
+            Intent(this, AiSettingsActivity::class.java)
+        } else Intent(action)
             .setPackage(packageName)
             .addCategory(Intent.CATEGORY_DEFAULT)
 
     private fun isActionAvailable(action: String): Boolean =
-        resolveFeatureActivity(featureIntent(action))
+        action == FeatureActions.AI_SETTINGS || resolveFeatureActivity(featureIntent(action))
 
     private fun openAction(action: String) {
         val intent = featureIntent(action)
-        if (!resolveFeatureActivity(intent)) {
+        if (action != FeatureActions.AI_SETTINGS && !resolveFeatureActivity(intent)) {
             Toast.makeText(this, "Модуль не включён", Toast.LENGTH_SHORT).show()
             renderCards()
             return

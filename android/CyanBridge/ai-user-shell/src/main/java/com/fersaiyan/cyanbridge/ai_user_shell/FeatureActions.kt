@@ -18,4 +18,11 @@ internal object FeatureActions {
     /** Opens :photo-question-tools' PhotoQuestionActivity. */
     const val PHOTO_QUESTION =
         "com.fersaiyan.cyanbridge.feature.PHOTO_QUESTION"
+
+    /**
+     * Internal marker for the settings card. The settings screen lives in this module and
+     * is launched with an explicit Activity intent, so no manifest action is exposed.
+     */
+    const val AI_SETTINGS =
+        "com.fersaiyan.cyanbridge.feature.AI_SETTINGS"
 }

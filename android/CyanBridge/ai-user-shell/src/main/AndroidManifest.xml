@@ -39,6 +39,20 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <!--
+            AI Settings screen (V1.4). Lets the user store an OpenRouter API key and pick a
+            model from a fixed local list, persisted in this module's own SharedPreferences.
+            It does no networking, makes no OpenRouter test call, and does not touch the
+            photo-question flow; saved values just wait for a later step to consume them.
+
+            Opened by AiUserShellActivity (same module) with an explicit internal Activity
+            Intent. Non-exported so external apps cannot open the screen.
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.ai_user_shell.AiSettingsActivity"
+            android:exported="false"
+            android:label="Настройки AI" />
     </application>
 
 </manifest>
