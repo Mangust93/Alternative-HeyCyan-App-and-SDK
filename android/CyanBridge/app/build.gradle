@@ -186,7 +186,7 @@ dependencies {
     //   ./gradlew :app:assembleDebug -PincludeConversationTranslation=false
     def includeConversationTranslation = providers.gradleProperty("includeConversationTranslation").orElse("true").get().toBoolean()
     if (includeConversationTranslation) {
-        debugImplementation project(":conversation-translation")
+        implementation project(":conversation-translation")
     } else {
         logger.lifecycle("includeConversationTranslation=false; skipping :conversation-translation dependency")
     }
