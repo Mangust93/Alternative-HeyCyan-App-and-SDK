@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    No permissions and no components are declared here on purpose. :ai-config is a pure
+    settings/config layer: it persists the OpenRouter API key and selected model via
+    plain SharedPreferences and does no networking, BLE, microphone or storage work.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

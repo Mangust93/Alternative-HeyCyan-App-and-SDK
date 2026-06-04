@@ -93,4 +93,86 @@
     <string name="synced_media_open_failed">Unable to open this media item.</string>
     <string name="synced_media_video_badge">VIDEO</string>
     <string name="auto_audio_speech_extend">Extend loop when speech detected (avoid cutting conversations)</string>
+
+    <!-- Bottom navigation (extracted from menu XML) -->
+    <string name="nav_chats">Chats</string>
+    <string name="nav_glasses">Glasses</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_plugins">Plugins</string>
+
+    <!-- Main screen – status / connection section -->
+    <string name="main_section_glasses_status">GLASSES STATUS</string>
+    <string name="main_label_battery">Battery: </string>
+    <string name="main_label_storage">Storage: </string>
+    <string name="main_section_connection">CONNECTION</string>
+    <string name="btn_scan">Scan</string>
+    <string name="btn_reconnect">Reconnect</string>
+    <string name="btn_disconnect">Disconnect</string>
+
+    <!-- Main screen – meeting capture -->
+    <string name="main_section_meeting_capture">MEETING CAPTURE</string>
+    <string name="btn_start">Start</string>
+    <string name="btn_stop">Stop</string>
+    <string name="main_label_timer">Timer:</string>
+    <string name="main_section_sync_progress">SYNC PROGRESS</string>
+    <string name="btn_stop_sync">Stop sync</string>
+
+    <!-- Main screen – media and AI sections -->
+    <string name="main_section_ai_assistant">AI ASSISTANT</string>
+    <string name="main_section_media_controls">MEDIA CONTROLS</string>
+    <string name="media_photo">Photo</string>
+    <string name="media_video">Video</string>
+    <string name="media_audio">Audio</string>
+
+    <!-- Recording banner (shared across screens) -->
+    <string name="recording_active">Recording active</string>
+
+    <!-- Chat list screen -->
+    <string name="chat_list_title">Chats</string>
+    <string name="chat_list_empty">No chats yet. Tap + to start.</string>
+    <string name="chat_list_hint_long_press">Long press a chat to delete it</string>
+
+    <!-- Recordings list screen -->
+    <string name="recordings_list_empty">No recordings yet. Start a meeting capture to create one.</string>
+
+    <!-- Device scan item -->
+    <string name="device_choose_type">Choose type</string>
+
+    <!-- Settings screen top header -->
+    <string name="settings_privacy_title">Privacy Settings</string>
+    <string name="settings_privacy_subtitle">Privacy-first defaults. Transcript storage is OFF by default.</string>
+
+    <!-- Tools / Diagnostics shell -->
+    <string name="tools_title">Tools / Diagnostics</string>
+    <string name="tools_subtitle">Optional, loosely-coupled feature modules. Cards that are unavailable are not built into this app.</string>
+    <string name="tools_open">Open</string>
+    <string name="tools_status_available">Available</string>
+    <string name="tools_status_unavailable">Module not included</string>
+    <string name="tools_launch_failed">Could not open module</string>
+
+    <!-- Settings entry card for the Tools screen -->
+    <string name="settings_tools_card_title">Tools / Diagnostics</string>
+    <string name="settings_tools_card_subtitle">Conversation translation, button diagnostics, debug logs, runtime diagnostics and phone tests.</string>
+    <string name="settings_tools_open">Open tools</string>
+
+    <!-- User-facing AI shell (:ai-user-shell) entry. Separate from the debug Tools card. -->
+    <string name="settings_ai_assistant_card_title">AI-функции</string>
+    <string name="settings_ai_assistant_card_subtitle">Переводчик, фото и вопрос и другие AI-функции в одном месте.</string>
+    <string name="settings_ai_assistant_open">Открыть AI-функции</string>
+
+    <!-- Feature cards -->
+    <string name="feature_conversation_translation_title">Conversation translation</string>
+    <string name="feature_conversation_translation_desc">On-device dialog translation (speech → translate → speech).</string>
+    <string name="feature_headset_button_title">Headset button diagnostics</string>
+    <string name="feature_headset_button_desc">Capture real key/media-button events from a headset.</string>
+    <string name="feature_glasses_button_title">Glasses button diagnostics</string>
+    <string name="feature_glasses_button_desc">Decode glasses button events from the BLE notify log.</string>
+    <string name="feature_debug_logs_title">Debug logs</string>
+    <string name="feature_debug_logs_desc">View recent diagnostic events and copy a bundle.</string>
+    <string name="feature_runtime_diagnostics_title">Runtime diagnostics</string>
+    <string name="feature_runtime_diagnostics_desc">App start, build/device facts, crashes and lifecycle.</string>
+    <string name="feature_phone_test_title">Phone test tools</string>
+    <string name="feature_phone_test_desc">Manual phone-side test and debug utilities.</string>
+    <string name="feature_photo_question_title">Photo question</string>
+    <string name="feature_photo_question_desc">Pick a photo, ask a text question, get a placeholder answer.</string>
 </resources>

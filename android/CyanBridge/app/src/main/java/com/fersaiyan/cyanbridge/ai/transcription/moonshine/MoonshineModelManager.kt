@@ -1,6 +1,5 @@
 package com.fersaiyan.cyanbridge.ai.transcription.moonshine
 
-import ai.moonshine.voice.JNI
 import android.content.Context
 import android.util.Log
 import okhttp3.OkHttpClient
@@ -17,6 +16,9 @@ import java.io.FileOutputStream
  */
 object MoonshineModelManager {
     private const val TAG = "MoonshineModel"
+    private const val UNAVAILABLE_MODEL_ARCH = 0
+    private const val UNAVAILABLE_MESSAGE =
+        "Moonshine runtime unavailable in this build: vendored Java/JNI bindings are missing"
 
     data class Progress(
         val percent: Int,
@@ -33,7 +35,7 @@ object MoonshineModelManager {
         SMALL_STREAMING_EN(
             id = "small-streaming-en",
             baseUrl = "https://download.moonshine.ai/model/small-streaming-en/quantized",
-            modelArch = JNI.MOONSHINE_MODEL_ARCH_SMALL_STREAMING,
+            modelArch = UNAVAILABLE_MODEL_ARCH,
             components = listOf(
                 "adapter.ort",
                 "cross_kv.ort",
@@ -61,7 +63,10 @@ object MoonshineModelManager {
         val topLevel: List<String>,
     )
 
+    fun isRuntimeAvailable(): Boolean = false
+
     fun isInstalled(context: Context, kind: ModelKind): Boolean {
+        if (!isRuntimeAvailable()) return false
         return validateDir(modelDir(context, kind), kind).ok
     }
 
@@ -99,6 +104,10 @@ object MoonshineModelManager {
         kind: ModelKind,
         onProgress: (Progress) -> Unit = {},
     ): File {
+        if (!isRuntimeAvailable()) {
+            Log.w(TAG, UNAVAILABLE_MESSAGE)
+            throw IllegalStateException(UNAVAILABLE_MESSAGE)
+        }
         val dir = modelDir(context, kind)
         if (isInstalled(context, kind)) return dir
 

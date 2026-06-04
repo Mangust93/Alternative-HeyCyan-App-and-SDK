@@ -1,8 +1,5 @@
 package com.fersaiyan.cyanbridge.ai.transcription.moonshine
 
-import ai.moonshine.voice.TranscriptEvent
-import ai.moonshine.voice.TranscriptEventListener
-import ai.moonshine.voice.Transcriber
 import android.content.Context
 import android.media.MediaCodec
 import android.media.MediaExtractor
@@ -326,4 +323,39 @@ class MoonshineTranscriptionProvider(
         private const val TAG = "MoonshineProvider"
         private const val TARGET_SAMPLE_RATE = 16_000
     }
+}
+
+/** Fails explicitly until the absent vendored Moonshine bindings are restored. */
+private class Transcriber {
+    fun loadFromFiles(modelPath: String, modelArch: Int): Unit = unavailable()
+
+    fun addListener(listener: (TranscriptEvent) -> Unit): Unit = unavailable()
+
+    fun start(): Unit = unavailable()
+
+    fun stop(): Unit = unavailable()
+
+    fun addAudio(samples: FloatArray, sampleRate: Int): Unit = unavailable()
+
+    private fun unavailable(): Nothing {
+        throw IllegalStateException(
+            "Moonshine runtime unavailable in this build: vendored Java/JNI bindings are missing"
+        )
+    }
+}
+
+private open class TranscriptEvent {
+    open fun accept(listener: TranscriptEventListener) = Unit
+
+    class LineCompleted(val line: Line? = null) : TranscriptEvent()
+
+    class Error(val cause: Throwable) : TranscriptEvent()
+
+    class Line(val text: String?)
+}
+
+private open class TranscriptEventListener {
+    open fun onLineCompleted(event: TranscriptEvent.LineCompleted) = Unit
+
+    open fun onError(event: TranscriptEvent.Error) = Unit
 }

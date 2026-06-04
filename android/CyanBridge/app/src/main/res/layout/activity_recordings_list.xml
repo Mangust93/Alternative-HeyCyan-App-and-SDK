@@ -45,7 +45,7 @@
         android:id="@+id/empty_state"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="No recordings yet. Start a meeting capture to create one."
+        android:text="@string/recordings_list_empty"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:gravity="center"

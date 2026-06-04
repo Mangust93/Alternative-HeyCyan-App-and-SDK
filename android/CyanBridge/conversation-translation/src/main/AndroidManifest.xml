@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- SpeechRecognizer needs the microphone (requested at runtime on API 24+). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Model download needs network. The host app already declares these, but the module
+         declares them too so it stays self-contained when reused. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <application>
+        <!--
+            Conversation translation screen (V1).
+
+            On-device dialog translation with no Hermes and no OpenRouter:
+            SpeechRecognizer -> ML Kit Language ID -> ML Kit Translation -> TextToSpeech.
+
+            This activity is internal to the host app; the tools shell uses its package-scoped action.
+            It remains non-exported so external apps cannot open the screen.
+
+            IMPORTANT (release): this module is wired into :app as debugImplementation only
+            (see app/build.gradle), so release builds never include it while it is gated by
+            the `includeConversationTranslation` property. Before any release that ships this
+            screen, either keep the module behind the flag, add a real in-app entry point, or
+            keep android:exported="false" here.
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.conversation_translation.ConversationTranslationActivity"
+            android:exported="false"
+            android:label="Перевод диалога">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.CONVERSATION_TRANSLATION" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

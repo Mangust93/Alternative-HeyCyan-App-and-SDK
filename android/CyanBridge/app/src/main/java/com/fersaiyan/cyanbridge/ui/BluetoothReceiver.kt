@@ -81,3 +81,82 @@ class BluetoothReceiver : BroadcastReceiver() {
     }
 
 }
+
+/**
+ * Compile-safe holder for auto-reconnect suppression state.
+ *
+ * Automatic BLE reconnect is referenced by callers without an implementation in this
+ * source tree. Keep user disconnect intent persistent while leaving scan/connect behavior
+ * untouched until a concrete reconnect implementation is available.
+ */
+object AutoPairManager {
+    private const val TAG = "AutoPairManager"
+    private const val PREFS_NAME = "auto_pair_manager"
+    private const val KEY_SUPPRESSED = "auto_reconnect_suppressed"
+    private const val KEY_REASON = "auto_reconnect_suppression_reason"
+
+    fun start(context: Context) {
+        Log.i(TAG, "Auto reconnect unavailable; suppression=${isAutoReconnectSuppressed(context)}")
+    }
+
+    fun setAutoReconnectSuppressed(suppressed: Boolean, reason: String? = null) {
+        setAutoReconnectSuppressed(MyApplication.CONTEXT, suppressed, reason)
+    }
+
+    fun isAutoReconnectSuppressed(): Boolean {
+        return isAutoReconnectSuppressed(MyApplication.CONTEXT)
+    }
+
+    fun getLastSuppressionReason(): String? {
+        return getLastSuppressionReason(MyApplication.CONTEXT)
+    }
+
+    fun clearAutoReconnectSuppression() {
+        clearAutoReconnectSuppression(MyApplication.CONTEXT)
+    }
+
+    fun setAutoReconnectSuppressed(context: Context, suppressed: Boolean, reason: String? = null) {
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(KEY_SUPPRESSED, suppressed)
+            .apply {
+                if (reason.isNullOrBlank()) {
+                    remove(KEY_REASON)
+                } else {
+                    putString(KEY_REASON, reason)
+                }
+            }
+            .apply()
+    }
+
+    fun isAutoReconnectSuppressed(context: Context): Boolean {
+        return context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_SUPPRESSED, false)
+    }
+
+    fun getLastSuppressionReason(context: Context): String? {
+        return context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getString(KEY_REASON, null)
+    }
+
+    fun clearAutoReconnectSuppression(context: Context) {
+        setAutoReconnectSuppressed(context, suppressed = false)
+    }
+
+    fun requestConnect(context: Context, reason: String) {
+        logUnavailableRequest(context, reason, macAddress = null)
+    }
+
+    fun requestConnectToMac(context: Context, macAddress: String, reason: String) {
+        logUnavailableRequest(context, reason, macAddress)
+    }
+
+    private fun logUnavailableRequest(context: Context, reason: String, macAddress: String?) {
+        if (isAutoReconnectSuppressed(context)) {
+            Log.i(TAG, "Skipping reconnect request ($reason): user suppression active")
+            return
+        }
+        val target = macAddress?.let { " target=$it" }.orEmpty()
+        Log.w(TAG, "Ignoring reconnect request ($reason): auto reconnect unavailable$target")
+    }
+}

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+            Headset / glasses button diagnostics screen.
+
+            Captures and shows real key + media-button events (KEYCODE_HEADSETHOOK,
+            KEYCODE_MEDIA_PLAY_PAUSE, KEYCODE_MEDIA_PLAY, KEYCODE_MEDIA_PAUSE,
+            KEYCODE_VOICE_ASSIST and, when routed, ACTION_MEDIA_BUTTON via a
+            framework MediaSession) so a tester can confirm whether button presses on
+            the glasses/headset actually reach Android.
+
+            This module is purely diagnostic: it does NOT bind any button to translation
+            and does NOT touch :conversation-translation, the core app, the glasses SDK
+            or the media flow.
+
+            This activity is internal to the host app; the tools shell uses its package-scoped action.
+            It remains non-exported so external apps cannot open the screen.
+
+            IMPORTANT (release): the module is wired as debugImplementation only, so
+            release builds never include it. To additionally drop it from a debug build:
+              ./gradlew :app:assembleDebug -PincludeHeadsetButtonTools=false
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.headset_button_tools.HeadsetButtonDiagnosticsActivity"
+            android:exported="false"
+            android:label="Headset Button Diagnostics">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.HEADSET_BUTTON_DIAGNOSTIC" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

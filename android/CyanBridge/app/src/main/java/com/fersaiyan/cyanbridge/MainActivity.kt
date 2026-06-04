@@ -149,6 +149,8 @@ import com.fersaiyan.cyanbridge.localmodels.storage.LocalModelStorageRepository
 import com.fersaiyan.cyanbridge.memoryvault.MemoryPolicyService
 import android.content.ClipboardManager
 import android.content.ClipData
+import com.fersaiyan.cyanbridge.automation.AutomationEvent
+import com.fersaiyan.cyanbridge.automation.NativeAutomationEngine
 
 
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
@@ -575,10 +577,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                             unsupportedReason,
                             Toast.LENGTH_SHORT,
                         ).show()
-                        return@setOnClickListener
-                    }
-
-                    if (maybeShowGeminiChatGptImageRequirementsWarning()) {
                         return@setOnClickListener
                     }
 
@@ -2103,56 +2101,69 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             return
         }
 
-        Log.i("AIHijack", "Redirecting Image Query to Tasker logic with $imagePath")
+        // Legacy Tasker path: only when Tasker is installed AND the community plugin is enabled.
+        // Native fallback: when Tasker is absent or plugin is disabled, open ChatThreadActivity directly.
+        val taskerInstalled = isTaskerInstalled()
+        val pluginEnabled = CommunityPluginPrefs.isGeminiChatGptImageAutomationEnabled(this)
 
-        try {
-            val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
-            val isLocked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                keyguardManager.isDeviceLocked
-            } else {
-                keyguardManager.isKeyguardLocked
-            }
-
-            // Wake and dismiss keyguard only when needed
-            if (isLocked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                setShowWhenLocked(true)
-                setTurnScreenOn(true)
-                keyguardManager.requestDismissKeyguard(this, null)
-            }
-
-            if (isLocked) {
-                speak("Unlock your phone to answer the image query")
-            }
-
-            // Stop glasses AI mode
-            LargeDataHandler.getInstance().glassesControl(byteArrayOf(0x02, 0x01, 0x0b)) { _, _ -> }
-
-            val file = File(imagePath)
-            if (!file.exists()) {
-                Log.e("AIHijack", "Image file does not exist: $imagePath")
-                return
-            }
-
-            // Copy file to public DCIM folder so it shows up in Gallery/Recents
-            val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-            val cameraDir = File(publicDir, "Camera")
-            if (!cameraDir.exists()) cameraDir.mkdirs()
-            
-            val publicFile = File(cameraDir, "Glasses_AI_${System.currentTimeMillis()}.jpg")
-            file.copyTo(publicFile, overwrite = true)
-            
-            // Scan the file so MediaStore/Gallery sees it immediately
-            MediaScannerConnection.scanFile(this, arrayOf(publicFile.absolutePath), arrayOf("image/jpeg")) { path, uri ->
-                Log.i("AIHijack", "Scanned to Gallery: $path")
-                // Once scanned, trigger the Tasker broadcast
-                runOnUiThread {
-                    sendAiBroadcast("image", path)
+        if (taskerInstalled && pluginEnabled) {
+            Log.i("AIHijack", "Redirecting Image Query to Tasker logic with $imagePath")
+            try {
+                val keyguardManager = getSystemService(KEYGUARD_SERVICE) as KeyguardManager
+                val isLocked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    keyguardManager.isDeviceLocked
+                } else {
+                    keyguardManager.isKeyguardLocked
                 }
+
+                // Wake and dismiss keyguard only when needed
+                if (isLocked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                    setShowWhenLocked(true)
+                    setTurnScreenOn(true)
+                    keyguardManager.requestDismissKeyguard(this, null)
+                }
+
+                if (isLocked) {
+                    speak("Unlock your phone to answer the image query")
+                }
+
+                // Stop glasses AI mode
+                LargeDataHandler.getInstance().glassesControl(byteArrayOf(0x02, 0x01, 0x0b)) { _, _ -> }
+
+                val file = File(imagePath)
+                if (!file.exists()) {
+                    Log.e("AIHijack", "Image file does not exist: $imagePath")
+                    return
+                }
+
+                // Copy file to public DCIM folder so it shows up in Gallery/Recents
+                val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+                val cameraDir = File(publicDir, "Camera")
+                if (!cameraDir.exists()) cameraDir.mkdirs()
+
+                val publicFile = File(cameraDir, "Glasses_AI_${System.currentTimeMillis()}.jpg")
+                file.copyTo(publicFile, overwrite = true)
+
+                // Scan the file so MediaStore/Gallery sees it immediately
+                MediaScannerConnection.scanFile(this, arrayOf(publicFile.absolutePath), arrayOf("image/jpeg")) { path, _ ->
+                    Log.i("AIHijack", "Scanned to Gallery: $path")
+                    // Once scanned, trigger the Tasker broadcast
+                    runOnUiThread {
+                        sendAiBroadcast("image", path)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AIHijack", "Failed to process image for Tasker: ${e.message}")
+            } finally {
+                imageQueryInProgress.set(false)
             }
-        } catch (e: Exception) {
-            Log.e("AIHijack", "Failed to process image for Tasker: ${e.message}")
-        } finally {
-            imageQueryInProgress.set(false)
+        } else {
+            Log.i("AIHijack", "Tasker not available, using NativeAutomationEngine for image: $imagePath")
+            try {
+                NativeAutomationEngine.handle(this, AutomationEvent.ImageReadyEvent(imagePath, "tasker_fallback"))
+            } finally {
+                imageQueryInProgress.set(false)
+            }
         }
     }
 
@@ -4363,9 +4374,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                             if (unsupportedReason != null) {
                                 Toast.makeText(this@MainActivity, unsupportedReason, Toast.LENGTH_SHORT).show()
                                 speak(unsupportedReason)
-                                return@runOnUiThread
-                            }
-                            if (maybeShowGeminiChatGptImageRequirementsWarning()) {
                                 return@runOnUiThread
                             }
                             handleGlassesImageButtonPressed(

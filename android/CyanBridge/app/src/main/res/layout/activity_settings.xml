@@ -32,7 +32,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Recording active"
+                android:text="@string/recording_active"
                 android:textColor="@color/bg_dark"
                 android:textStyle="bold" />
 
@@ -40,7 +40,7 @@
                 android:id="@+id/btn_meeting_banner_stop"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Stop"
+                android:text="@string/btn_stop"
                 android:backgroundTint="@color/bg_dark"
                 android:textColor="@color/danger" />
         </LinearLayout>
@@ -50,7 +50,7 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Privacy Settings"
+        android:text="@string/settings_privacy_title"
         android:textColor="@color/text_primary"
         android:textSize="20sp"
         android:textStyle="bold"
@@ -63,7 +63,7 @@
         android:id="@+id/subtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Privacy-first defaults. Transcript storage is OFF by default."
+        android:text="@string/settings_privacy_subtitle"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:layout_marginTop="6dp"
@@ -150,6 +150,102 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="16dp">
+
+            <!--
+                AI-функции entry — the user-facing AI shell (:ai-user-shell), opened via
+                the package-scoped AI_USER_SHELL intent action. This is a SEPARATE, normal
+                user entry point; the debug "Инструменты / Диагностика" card below stays as
+                the tester/debug shell. The whole card is hidden when the optional module is
+                toggled out of the build (-PincludeAiUserShell=false).
+            -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_ai_assistant_entry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_ai_assistant_card_title"
+                        android:textColor="@color/cyan_accent"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:letterSpacing="0.1" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/settings_ai_assistant_card_subtitle"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_open_ai_assistant"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/settings_ai_assistant_open"
+                        android:textColor="@color/cyan_accent"
+                        app:strokeColor="@color/cyan_accent" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Tools / Diagnostics entry (opens the loosely-coupled feature shell) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_tools_entry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_tools_card_title"
+                        android:textColor="@color/cyan_accent"
+                        android:textStyle="bold"
+                        android:textSize="12sp"
+                        android:letterSpacing="0.1" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/settings_tools_card_subtitle"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_open_tools"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/settings_tools_open"
+                        android:textColor="@color/cyan_accent"
+                        app:strokeColor="@color/cyan_accent" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- AI / Automation Section (collapsible) -->
             <com.google.android.material.card.MaterialCardView

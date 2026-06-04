@@ -121,6 +121,11 @@
             android:label="Community Plugins" />
 
         <activity
+            android:name=".ui.tools.ToolsActivity"
+            android:exported="false"
+            android:label="@string/tools_title" />
+
+        <activity
             android:name=".ui.PublishPluginActivity"
             android:exported="false"
             android:label="Publish Plugin" />
@@ -154,6 +159,12 @@
             android:name=".ui.debug.TranscriptionDebugActivity"
             android:exported="false"
             android:label="Transcription Debug" />
+
+        <!--
+            PhoneTestDiagnosticsActivity now lives in the optional :phone-test-tools
+            module and is contributed via its own manifest (debugImplementation only).
+            Disable with: ./gradlew :app:assembleDebug -PincludePhoneTestTools=false
+        -->
 
         <activity
             android:name=".ui.notes.NotesListActivity"

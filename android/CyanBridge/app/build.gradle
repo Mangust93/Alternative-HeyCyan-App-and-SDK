@@ -134,11 +134,116 @@ dependencies {
     // LiteRT runtime for local models (Google's inference engine)
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.10.0")
 
-    // Offline transcription fallback (Moonshine; vendored module)
-    implementation project(":moonshine-voice")
+    // Offline transcription fallback (Moonshine; vendored module).
+    // The vendored native runtime is optional in this checkout. When it is absent,
+    // app code uses a compile-safe unavailable fallback instead of building :moonshine-voice.
+    def moonshineCoreCmake = rootProject.file("../third_party/moonshine/core/CMakeLists.txt")
+    if (moonshineCoreCmake.exists()) {
+        implementation project(":moonshine-voice")
+    } else {
+        logger.lifecycle("Moonshine native runtime not found; skipping :moonshine-voice dependency")
+    }
 
     // Legacy offline transcription fallback (Vosk) - kept for now until Moonshine is fully wired
     implementation "com.alphacephei:vosk-android:0.3.47"
+
+    // Optional phone-test / debug diagnostics module.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludePhoneTestTools=false
+    def includePhoneTestTools = providers.gradleProperty("includePhoneTestTools").orElse("true").get().toBoolean()
+    if (includePhoneTestTools) {
+        debugImplementation project(":phone-test-tools")
+    } else {
+        logger.lifecycle("includePhoneTestTools=false; skipping :phone-test-tools dependency")
+    }
+
+    // Optional debug-log diagnostics module.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeDebugLogTools=false
+    def includeDebugLogTools = providers.gradleProperty("includeDebugLogTools").orElse("true").get().toBoolean()
+    if (includeDebugLogTools) {
+        debugImplementation project(":debug-log-tools")
+    } else {
+        logger.lifecycle("includeDebugLogTools=false; skipping :debug-log-tools dependency")
+    }
+
+    // Optional runtime-diagnostics module (auto-installs runtime instrumentation).
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeRuntimeDiagnosticsTools=false
+    def includeRuntimeDiagnosticsTools = providers.gradleProperty("includeRuntimeDiagnosticsTools").orElse("true").get().toBoolean()
+    if (includeRuntimeDiagnosticsTools) {
+        debugImplementation project(":runtime-diagnostics-tools")
+    } else {
+        logger.lifecycle("includeRuntimeDiagnosticsTools=false; skipping :runtime-diagnostics-tools dependency")
+    }
+
+    // Optional conversation-translation module (V1 on-device dialog translation:
+    // SpeechRecognizer -> ML Kit Language ID -> ML Kit Translation -> TextToSpeech).
+    // Wired as debugImplementation only (never in release): the screen is exported=true
+    // for adb/manual testing and pulls in ML Kit translate model infrastructure, so it
+    // stays out of release builds until it gets a real, gated in-app entry point.
+    // Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeConversationTranslation=false
+    def includeConversationTranslation = providers.gradleProperty("includeConversationTranslation").orElse("true").get().toBoolean()
+    if (includeConversationTranslation) {
+        debugImplementation project(":conversation-translation")
+    } else {
+        logger.lifecycle("includeConversationTranslation=false; skipping :conversation-translation dependency")
+    }
+
+    // Optional headset/glasses button diagnostic module. Captures real key +
+    // media-button events so a tester can confirm whether glasses/headset button
+    // presses reach Android. Purely diagnostic: binds nothing to translation and does
+    // not touch :conversation-translation.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeHeadsetButtonTools=false
+    def includeHeadsetButtonTools = providers.gradleProperty("includeHeadsetButtonTools").orElse("true").get().toBoolean()
+    if (includeHeadsetButtonTools) {
+        debugImplementation project(":headset-button-tools")
+    } else {
+        logger.lifecycle("includeHeadsetButtonTools=false; skipping :headset-button-tools dependency")
+    }
+
+    // Optional glasses BUTTON EVENT diagnostic module. Read-only: it tails the app's
+    // own "DeviceNotify" logcat (the BLE notify path glasses buttons actually use) and
+    // decodes the loadData[6] opcode. Registers no SDK listener, touches no BLE/media
+    // flow, binds nothing to translation and does not touch :conversation-translation.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeGlassesButtonEventTools=false
+    def includeGlassesButtonEventTools = providers.gradleProperty("includeGlassesButtonEventTools").orElse("true").get().toBoolean()
+    if (includeGlassesButtonEventTools) {
+        debugImplementation project(":glasses-button-event-tools")
+    } else {
+        logger.lifecycle("includeGlassesButtonEventTools=false; skipping :glasses-button-event-tools dependency")
+    }
+
+    // Optional "photo question" feature module. Self-contained flow: pick a photo
+    // (incl. photos downloaded from the glasses), ask a text question, get an answer
+    // from a mock/server placeholder, show it on screen. No dependency on the glasses
+    // SDK, BLE, the media flow or :conversation-translation; ships no networking.
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludePhotoQuestionTools=false
+    def includePhotoQuestionTools = providers.gradleProperty("includePhotoQuestionTools").orElse("true").get().toBoolean()
+    if (includePhotoQuestionTools) {
+        debugImplementation project(":photo-question-tools")
+    } else {
+        logger.lifecycle("includePhotoQuestionTools=false; skipping :photo-question-tools dependency")
+    }
+
+    // Optional ":ai-user-shell" module — the first user-facing AI section of the app
+    // ("AI-функции" / "AI ассистент"). Routes to the already-shipping AI features via
+    // package-scoped Intent actions only; depends on neither :app nor the feature modules
+    // it launches, so it degrades to "Модуль не включён" cards when they are toggled out.
+    // The user-facing counterpart to the debug "Инструменты / Диагностика" shell, which is
+    // left untouched. The host app opens it via the AI_USER_SHELL action (no class import).
+    // Included as debugImplementation only (never in release). Toggle off with:
+    //   ./gradlew :app:assembleDebug -PincludeAiUserShell=false
+    def includeAiUserShell = providers.gradleProperty("includeAiUserShell").orElse("true").get().toBoolean()
+    if (includeAiUserShell) {
+        debugImplementation project(":ai-user-shell")
+    } else {
+        logger.lifecycle("includeAiUserShell=false; skipping :ai-user-shell dependency")
+    }
 
     // Chapter 2 storage
     def room_version = "2.7.0"

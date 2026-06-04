@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+            Debug / manual phone-test diagnostics screen.
+
+            This activity is internal to the host app; the tools shell uses its package-scoped action.
+            It remains non-exported so external apps cannot open the screen.
+
+            IMPORTANT (release): before shipping a release build either
+              - disable this module:  ./gradlew :app:assembleDebug -PincludePhoneTestTools=false
+                (the module is wired as debugImplementation only, so release builds never
+                 include it — but keep this guarantee in mind), or
+              - keep android:exported="false" here.
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.phone_test_tools.PhoneTestDiagnosticsActivity"
+            android:exported="false"
+            android:label="Phone Test / Debug">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.PHONE_TEST_TOOLS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

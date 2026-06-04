@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+        OpenRouter Direct answer mode calls https://openrouter.ai over HTTPS from the
+        device, so this optional module declares INTERNET itself. It is contributed to the
+        merged manifest only when the module is included (default debug build); with
+        -PincludePhotoQuestionTools=false the module — and this permission line — are absent
+        from the build entirely. (The host app may declare INTERNET for its own reasons;
+        that is independent of this module.)
+    -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application>
+        <!--
+            Photo question screen.
+
+            Self-contained flow: the tester picks a photo with the system photo picker
+            (GetContent — no storage permission needed; the picker also surfaces photos
+            already downloaded from the glasses into the gallery), types a text question,
+            and the answer comes back from PhotoQuestionResponder. That responder is a
+            mock/server placeholder: today it answers locally; a real backend call would
+            replace its body without touching this Activity.
+
+            This activity is internal to the host app; the tools shell opens it via its
+            package-scoped action only. It is non-exported so external apps cannot open
+            the screen.
+
+            IMPORTANT (release): the module is wired as debugImplementation only, so
+            release builds never include it. To additionally drop it from a debug build:
+              ./gradlew :app:assembleDebug -PincludePhotoQuestionTools=false
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.photo_question_tools.PhotoQuestionActivity"
+            android:exported="false"
+            android:label="Photo question">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.PHOTO_QUESTION" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

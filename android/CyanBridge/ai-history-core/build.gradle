@@ -1,0 +1,41 @@
+// Shared ":ai-history-core" module — a tiny local history layer for AI requests.
+//
+// Standalone Android library holding ONLY a local, on-device log of AI requests
+// (Photo Question, Translation, ...). Like the other small core modules it does NOT
+// depend on :app, the glasses SDK (com.oudmon.ble.*), BLE, the media flow, networking,
+// :ai-user-shell, :photo-question-tools or any other module.
+//
+// It performs NO networking and NO server sync. It persists a capped list of history
+// items as JSON in a private SharedPreferences file, using only the framework's bundled
+// org.json (no Room/SQLite, no extra dependencies). The API key is NEVER part of a
+// history item and is never stored here.
+//
+// As of Module 3 it is only registered in settings.gradle.kts; nothing depends on it yet
+// (no Photo Question wiring, no UI). It is wired into consumers in a later module.
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.fersaiyan.cyanbridge.ai_history_core'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // Intentionally empty: this module persists history with plain SharedPreferences
+    // (android.content.Context) and the framework-bundled org.json only. No appcompat,
+    // no networking, no Room/SQLite, no glasses SDK, no project(":app").
+}

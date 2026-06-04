@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CyanBridge</string>
+    <string name="nav_transcriptions_recordings">Записи\nи транскрипции</string>
+    <string name="text_1">Поиск</string>
+    <string name="text_2">Переподключить</string>
+    <string name="text_3">Отключить</string>
+    <string name="text_4">Синхр. время</string>
+    <string name="text_22">Подключение…</string>
+    <string name="text_5">Версия устройства</string>
+    <string name="text_6">Сделать фото</string>
+    <string name="text_7">Записать видео</string>
+    <string name="text_8">Записать аудио</string>
+    <string name="text_9">Умное распознавание фото</string>
+    <string name="text_10">Bluetooth-пара</string>
+    <string name="text_11">Зарегистрировать слушатель</string>
+    <string name="text_12">Батарея</string>
+    <string name="text_13">Громкость</string>
+    <string name="text_14">Кол-во медиафайлов на очках</string>
+    <string name="text_15">Загрузка BLE+WiFi P2P</string>
+    <string name="text_16">Дамп OTA-сервера</string>
+    <string name="text_17">Тест OTA (pull-режим)</string>
+    <string name="scan_device">Поиск устройств</string>
+
+    <string name="battery_opt_title">Держать CyanBridge активным</string>
+    <string name="battery_opt_status_on">Статус: оптимизация батареи ВКЛЮЧЕНА для CyanBridge</string>
+    <string name="battery_opt_status_off">Статус: оптимизация батареи ВЫКЛЮЧЕНА для CyanBridge</string>
+    <string name="battery_opt_body">На некоторых телефонах Bluetooth-устройства могут отключаться, когда CyanBridge работает в фоне или после закрытия приложения. Чтобы очки оставались подключёнными, отключите оптимизацию батареи для CyanBridge.</string>
+    <string name="battery_opt_disable_button">Отключить оптимизацию батареи</string>
+    <string name="battery_opt_open_list_button">Открыть настройки оптимизации</string>
+    <string name="battery_opt_open_app_info_button">Открыть информацию о приложении</string>
+    <string name="battery_opt_lock_app_title">Также закрепите CyanBridge в «Недавних»</string>
+    <string name="battery_opt_lock_app_body">Откройте «Недавние», найдите CyanBridge, затем через меню приложения (долгое нажатие или нажатие на значок) выберите «Закрепить/заблокировать».</string>
+    <string name="battery_opt_done_button">Закрепил</string>
+    <string name="battery_opt_skip_button">Не показывать снова</string>
+    <string name="battery_opt_still_on_toast">Оптимизация батареи всё ещё включена. Отключите её и снова нажмите «Закрепил».</string>
+    <string name="battery_opt_not_supported">Настройки оптимизации батареи недоступны в этой версии Android.</string>
+    <string name="battery_opt_cant_open_settings">Не удалось открыть настройки на этом устройстве.</string>
+
+    <string name="welcome_title">Добро пожаловать в CyanBridge</string>
+    <string name="welcome_body">Давайте настроим ваши умные очки. Нам нужно настроить несколько параметров для стабильного подключения.</string>
+    <string name="welcome_button">Начать настройку</string>
+    <string name="app_lock_guide_title">Предотвратить очистку ОЗУ</string>
+    <string name="app_lock_guide_body">Android часто закрывает фоновые приложения для экономии ОЗУ. Чтобы избежать отключений, «закрепите» CyanBridge в меню «Недавних».</string>
+    <string name="app_lock_guide_instructions">1. Проведите вверх (или нажмите кнопку «Квадрат»), чтобы увидеть недавние приложения.\n2. Найдите CyanBridge.\n3. Нажмите на значок вверху или зажмите миниатюру.\n4. Выберите «Закрепить» или значок замка.</string>
+    <string name="app_lock_guide_button">Завершить настройку</string>
+
+    <!-- Сервис автоматизации — технические метки, оставлены без перевода -->
+    <string name="local_agent_accessibility_service_label">Local Agent Automation</string>
+    <string name="local_agent_accessibility_service_description">Enables on-device automation primitives (read screen text, click, scroll, back/home) for the local agent.</string>
+    <string name="local_agent_accessibility_description">Local agent screen observer (MVP)</string>
+
+    <!-- Онбординг -->
+    <string name="onboarding_daily_facts_title">Ежедневные факты и дневник</string>
+    <string name="onboarding_daily_facts_desc">Ежедневное уведомление для просмотра фактов о вашем дне.</string>
+    <string name="onboarding_daily_facts_details">Каждый вечер вы будете получать уведомление с предложением подтвердить факты о прошедшем дне. Это создаёт автоматический дневник, который помогает ИИ запоминать важные события, людей и впечатления. Чем больше вы используете функцию, тем персональнее становится ассистент.</string>
+    <string name="onboarding_screen_capture_title">Экранная память</string>
+    <string name="onboarding_screen_capture_desc">Как Windows Recall — автоматически фиксируйте и запоминайте содержимое экрана.</string>
+    <string name="onboarding_screen_capture_details">Приложение может периодически фиксировать текст с вашего экрана, чтобы ИИ мог лучше помочь вам. Вы можете добавить чувствительные приложения (банки, менеджеры паролей, мессенджеры) в чёрный список. Все данные хранятся локально на устройстве.</string>
+    <string name="onboarding_audio_capture_title">Непрерывная запись аудио</string>
+    <string name="onboarding_audio_capture_desc">Автоматическая запись аудио с очков для транскрибации и ежедневных сводок.</string>
+    <string name="onboarding_audio_capture_details">При включении приложение записывает аудио с очков кусками по 15 минут, затем транскрибирует для автоматического дневника/сводки. Вы можете просматривать и удалять записи в любое время. Всё аудио хранится на вашем устройстве.</string>
+    <string name="onboarding_agent_personality_title">Персонализация ИИ</string>
+    <string name="onboarding_agent_personality_desc">Настройте поведение ИИ-ассистента и что он знает о вас.</string>
+    <string name="onboarding_agent_personality_details">Вы можете настроить личность ассистента (стиль общения, тон) и предоставить факты о себе (работа, хобби, семья, предпочтения). Это делает ИИ более персональным и полезным. Всё можно изменить в Настройках в любое время.</string>
+    <string name="onboarding_local_storage_title">Данные остаются на вашем устройстве</string>
+    <string name="onboarding_local_storage_desc">Все данные зашифрованы и хранятся локально на телефоне.</string>
+    <string name="onboarding_local_storage_details">Ваши чаты, снимки экрана, записи и воспоминания ИИ зашифрованы с помощью стандартного шифрования и хранятся только на вашем устройстве. В будущем появится облачная синхронизация (Pro-подписка). Облачные опции пока неактивны.</string>
+    <string name="onboarding_pro_sub_title">Разблокировать премиум-функции</string>
+    <string name="onboarding_pro_sub_desc">Облачные функции для продвинутых пользователей.</string>
+    <string name="onboarding_pro_sub_details">Всё приложение можно использовать БЕСПЛАТНО с локальными моделями на телефоне (Qwen 2.5 1.7B, Whisper и др.). Интернет не нужен!\n\nPro-подписка нужна ТОЛЬКО для:\n• Облачных ИИ-моделей (платные API)\n• Облачной синхронизации памяти\n\n🔒 РЕЖИМ НЕВИДИМКИ (скоро)\nРежим невидимки — скрытая запись аудио, фото и видео с очков. Требует однократной оплаты прошивки.\n\n🎁 БЕСПЛАТНЫЙ ПРОБНЫЙ ПЕРИОД\nНовые пользователи получают 1 месяц Pro бесплатно. Отмена в любой момент.</string>
+
+    <!-- Чат -->
+    <string name="delete_chat_title">Удалить чат</string>
+    <string name="delete_chat_message">Удалить «%s»? Это действие необратимо.</string>
+    <string name="chat_deleted">Чат удалён</string>
+    <string name="open_synced_media">Просмотр медиа с очков</string>
+    <string name="synced_media_title">Медиа с очков</string>
+    <string name="synced_media_folder_hint">Файлы из: %1$s</string>
+    <string name="synced_media_empty">Синхронизированные фото и видео не найдены.</string>
+    <string name="synced_media_open_failed">Не удалось открыть этот медиафайл.</string>
+    <string name="synced_media_video_badge">ВИДЕО</string>
+    <string name="auto_audio_speech_extend">Продлевать цикл при обнаружении речи (не обрывать разговоры)</string>
+
+    <!-- Нижняя навигация -->
+    <string name="nav_chats">Чаты</string>
+    <string name="nav_glasses">Очки</string>
+    <string name="nav_settings">Настройки</string>
+    <string name="nav_plugins">Плагины</string>
+
+    <!-- Главный экран – статус и подключение -->
+    <string name="main_section_glasses_status">СТАТУС ОЧКОВ</string>
+    <string name="main_label_battery">Батарея: </string>
+    <string name="main_label_storage">Память: </string>
+    <string name="main_section_connection">ПОДКЛЮЧЕНИЕ</string>
+    <string name="btn_scan">Поиск</string>
+    <string name="btn_reconnect">Переподключить</string>
+    <string name="btn_disconnect">Отключить</string>
+
+    <!-- Главный экран – запись встречи -->
+    <string name="main_section_meeting_capture">ЗАПИСЬ ВСТРЕЧИ</string>
+    <string name="btn_start">Начать</string>
+    <string name="btn_stop">Стоп</string>
+    <string name="main_label_timer">Таймер:</string>
+    <string name="main_section_sync_progress">СИНХРОНИЗАЦИЯ</string>
+    <string name="btn_stop_sync">Остановить синхр.</string>
+
+    <!-- Главный экран – медиа и ИИ -->
+    <string name="main_section_ai_assistant">ИИ-АССИСТЕНТ</string>
+    <string name="main_section_media_controls">МЕДИА С ОЧКОВ</string>
+    <string name="media_photo">Фото</string>
+    <string name="media_video">Видео</string>
+    <string name="media_audio">Аудио</string>
+
+    <!-- Баннер записи (общий) -->
+    <string name="recording_active">Запись активна</string>
+
+    <!-- Список чатов -->
+    <string name="chat_list_title">Чаты</string>
+    <string name="chat_list_empty">Нет чатов. Нажмите + для создания.</string>
+    <string name="chat_list_hint_long_press">Долгое нажатие на чат — удалить</string>
+
+    <!-- Список записей -->
+    <string name="recordings_list_empty">Нет записей. Запустите запись встречи для создания.</string>
+
+    <!-- Элемент устройства -->
+    <string name="device_choose_type">Выбрать тип</string>
+
+    <!-- Экран настроек – заголовок -->
+    <string name="settings_privacy_title">Настройки конфиденциальности</string>
+    <string name="settings_privacy_subtitle">Приватные настройки по умолчанию. Хранение транскрипций ВЫКЛЮЧЕНО.</string>
+
+    <!-- Инструменты / Диагностика -->
+    <string name="tools_title">Инструменты / Диагностика</string>
+    <string name="tools_subtitle">Опциональные слабосвязанные модули. Недоступные карточки не включены в эту сборку.</string>
+    <string name="tools_open">Открыть</string>
+    <string name="tools_status_available">Доступно</string>
+    <string name="tools_status_unavailable">Модуль не включён</string>
+    <string name="tools_launch_failed">Не удалось открыть модуль</string>
+
+    <!-- Карточка входа в Инструменты на экране настроек -->
+    <string name="settings_tools_card_title">Инструменты / Диагностика</string>
+    <string name="settings_tools_card_subtitle">Перевод диалога, диагностика кнопок, debug-логи, runtime-диагностика и тесты телефона.</string>
+    <string name="settings_tools_open">Открыть инструменты</string>
+
+    <!-- Карточки модулей -->
+    <string name="feature_conversation_translation_title">Перевод диалога</string>
+    <string name="feature_conversation_translation_desc">Перевод диалога на устройстве (речь → перевод → речь).</string>
+    <string name="feature_headset_button_title">Диагностика кнопки гарнитуры</string>
+    <string name="feature_headset_button_desc">Захват реальных key/media-событий гарнитуры.</string>
+    <string name="feature_glasses_button_title">Диагностика кнопок очков</string>
+    <string name="feature_glasses_button_desc">Расшифровка событий кнопок очков из BLE-notify лога.</string>
+    <string name="feature_debug_logs_title">Debug-логи</string>
+    <string name="feature_debug_logs_desc">Просмотр последних диагностических событий и копирование.</string>
+    <string name="feature_runtime_diagnostics_title">Runtime-диагностика</string>
+    <string name="feature_runtime_diagnostics_desc">Старт приложения, сведения о сборке/устройстве, сбои.</string>
+    <string name="feature_phone_test_title">Тесты телефона</string>
+    <string name="feature_phone_test_desc">Ручные утилиты тестирования и отладки на телефоне.</string>
+    <string name="feature_photo_question_title">Фото и вопрос</string>
+    <string name="feature_photo_question_desc">Выберите фото, задайте вопрос текстом, получите ответ-заглушку.</string>
+</resources>

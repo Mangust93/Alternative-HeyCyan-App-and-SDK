@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    No permissions and no components are declared here on purpose. :ai-history-core is a
+    pure local-history layer: it persists a capped list of AI request records via plain
+    SharedPreferences + org.json and does no networking, BLE, microphone or storage work.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" />

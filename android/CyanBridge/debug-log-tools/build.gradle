@@ -1,0 +1,34 @@
+// Optional debug-log diagnostics module.
+//
+// Standalone Android library: it does NOT depend on :app and never references
+// app-only classes (no scan/connect/media/BLE/P2P/Moonshine runtime imports).
+// It collects real diagnostic events to app-specific storage and renders them in a
+// debug activity. It is wired into :app only as a debugImplementation and only when
+// the `includeDebugLogTools` Gradle property is true (default). See app/build.gradle.
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.fersaiyan.cyanbridge.debug_log_tools'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // AppCompatActivity only. Intentionally minimal: no project(":app") dependency,
+    // no Moonshine runtime, no glasses SDK, no heavy logging libraries.
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+}

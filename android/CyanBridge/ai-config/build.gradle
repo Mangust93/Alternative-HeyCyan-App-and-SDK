@@ -1,0 +1,43 @@
+// Shared ":ai-config" module — a tiny config layer for AI settings.
+//
+// Standalone Android library holding ONLY the user-facing AI configuration: the
+// OpenRouter API key, the selected model and the fixed local model list, plus the
+// API-key masking. It exists so more than one optional module can share a single
+// source of truth for these settings (today :ai-user-shell; later Photo Question).
+//
+// Like the other optional modules it does NOT depend on :app, the glasses SDK
+// (com.oudmon.ble.*), BLE, the media flow, networking or any other module. It does
+// NOT perform any networking and contains NO OpenRouter HTTP/request/response logic —
+// it only persists settings via plain SharedPreferences (android.content.Context),
+// which is why it needs no extra dependencies (not even appcompat).
+//
+// It is pulled into the build only transitively, through whichever optional module
+// depends on it (e.g. :ai-user-shell as a debugImplementation); :app never depends on
+// it directly.
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'com.fersaiyan.cyanbridge.ai_config'
+    compileSdk 35
+
+    defaultConfig {
+        minSdk 24
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+}
+
+dependencies {
+    // Intentionally empty: this module persists settings with plain SharedPreferences
+    // from the Android framework (android.content.Context) only. No appcompat, no
+    // networking, no glasses SDK, no project(":app").
+}

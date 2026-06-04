@@ -277,6 +277,8 @@ class ChatThreadActivity : AppCompatActivity() {
             ?.takeIf { it.isNotBlank() }
             ?.let { binding.inputMessage.setText(it) }
 
+        applyNativeAutomationExtras(intent)
+
         setupBottomNavigation()
         refreshModelBadge("Ready")
         updateComposerForGenerationState()
@@ -357,7 +359,24 @@ class ChatThreadActivity : AppCompatActivity() {
             adapter.submitList(emptyList())
             binding.tvDailyReviewQueueStatus.visibility = android.view.View.GONE
         }
+        applyNativeAutomationExtras(intent)
+        updatePendingAttachmentsUi()
         applyChatAppearance()
+    }
+
+    private fun applyNativeAutomationExtras(intent: Intent?) {
+        val attachedImagePath = intent?.getStringExtra(EXTRA_ATTACHED_IMAGE_PATH)
+        if (!attachedImagePath.isNullOrBlank() &&
+            File(attachedImagePath).exists() &&
+            attachedImagePath !in pendingImagePaths
+        ) {
+            pendingImagePaths += attachedImagePath
+        }
+
+        val initialPrompt = intent?.getStringExtra(EXTRA_INITIAL_PROMPT)
+        if (!initialPrompt.isNullOrBlank() && binding.inputMessage.text.isNullOrBlank()) {
+            binding.inputMessage.setText(initialPrompt)
+        }
     }
 
     private fun restoreDailyReviewConfigForCurrentThread() {
@@ -2517,5 +2536,9 @@ class ChatThreadActivity : AppCompatActivity() {
         const val EXTRA_DAILY_FACTS_REVIEW = "daily_facts_review"
         const val EXTRA_DAILY_FACTS_DATE = "daily_facts_date"
         const val EXTRA_DAILY_FACTS_LOOKBACK_DAYS = "daily_facts_lookback_days"
+
+        // NativeAutomationEngine: image-flow extras
+        const val EXTRA_ATTACHED_IMAGE_PATH = "attached_image_path"
+        const val EXTRA_INITIAL_PROMPT = "initial_prompt"
     }
 }

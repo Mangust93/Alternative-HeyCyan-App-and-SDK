@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+            Glasses button-event diagnostics screen.
+
+            Glasses buttons do NOT arrive as Android key / media-button events (that is
+            what :headset-button-tools checks). They arrive over the HeyCyan SDK BLE
+            notify path, which :app already prints for every frame as:
+              Log.i("DeviceNotify", "cmdType=..., loadData=...")
+
+            This screen tails the app's OWN process logcat for the "DeviceNotify" tag,
+            decodes the loadData[6] opcode (0x02 = AI photo button, 0x03 = AI/mic
+            button, 0x0c = pause, etc.) and shows raw + parsed events so a tester can
+            confirm which glasses button produced which notify.
+
+            Purely diagnostic and read-only: it does NOT register an SDK listener, does
+            NOT touch BLE / the media flow / the glasses SDK / :conversation-translation,
+            and binds nothing to translation.
+
+            This activity is internal to the host app; the tools shell uses its package-scoped action.
+            It remains non-exported so external apps cannot open the screen.
+
+            IMPORTANT (release): the module is wired as debugImplementation only, so
+            release builds never include it. To additionally drop it from a debug build:
+              ./gradlew :app:assembleDebug -PincludeGlassesButtonEventTools=false
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.glasses_button_event_tools.GlassesButtonEventDiagnosticsActivity"
+            android:exported="false"
+            android:label="Glasses Button Event Diagnostics">
+            <!--
+                Loosely-coupled in-app entry point. The core app opens this screen via
+                Intent(action) only (it never references this class), and checks
+                resolveActivity first so it degrades gracefully when the module is absent.
+            -->
+            <intent-filter>
+                <action android:name="com.fersaiyan.cyanbridge.feature.GLASSES_BUTTON_EVENT_DIAGNOSTIC" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
