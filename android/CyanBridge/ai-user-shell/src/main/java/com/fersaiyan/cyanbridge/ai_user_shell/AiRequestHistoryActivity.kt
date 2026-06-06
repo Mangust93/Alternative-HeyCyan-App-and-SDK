@@ -1,13 +1,17 @@
 package com.fersaiyan.cyanbridge.ai_user_shell
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -20,6 +24,8 @@ import com.fersaiyan.cyanbridge.ai_history_core.AiRequestHistoryStore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /**
  * AI request history screen ("История запросов") — part of the user-facing
@@ -42,6 +48,13 @@ class AiRequestHistoryActivity : AppCompatActivity() {
     private lateinit var emptyView: TextView
 
     private val density: Float by lazy { resources.displayMetrics.density }
+
+    /**
+     * Single background thread used only to decode small history thumbnails off the UI
+     * thread. Image decoding is best-effort: any failure leaves the preview hidden so a
+     * missing/unreadable reference never blocks or crashes the screen.
+     */
+    private val previewExecutor: ExecutorService by lazy { Executors.newSingleThreadExecutor() }
 
     private val timeFormat: SimpleDateFormat by lazy {
         SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
@@ -111,6 +124,12 @@ class AiRequestHistoryActivity : AppCompatActivity() {
         renderHistory()
     }
 
+    override fun onDestroy() {
+        // Stop any in-flight thumbnail decode; a superseded result is dropped (see attachPreview).
+        previewExecutor.shutdownNow()
+        super.onDestroy()
+    }
+
     private fun onClearHistory() {
         store.clearHistory()
         renderHistory()
@@ -174,6 +193,11 @@ class AiRequestHistoryActivity : AppCompatActivity() {
             setPadding(0, dp(8), 0, 0)
         })
 
+        // Optional photo metadata: a small preview (when the local image reference still
+        // resolves) and/or the saved image label. Both degrade gracefully — a missing or
+        // unreadable reference simply shows no preview and never crashes the screen.
+        addPhotoPreview(cardLayout, item)
+
         // Question (visually shortened when long).
         val question = item.question.takeIf { it.isNotBlank() } ?: "—"
         cardLayout.addView(TextView(this).apply {
@@ -209,6 +233,80 @@ class AiRequestHistoryActivity : AppCompatActivity() {
         return cardLayout
     }
 
+    /**
+     * Add an optional photo label line and a small image preview for items that carry a
+     * local image reference. The label is shown synchronously when present. The preview is
+     * decoded on a background thread and shown only if it succeeds; any failure (no
+     * reference, revoked access, unreadable/oversized/corrupt image) leaves no preview and
+     * never throws — satisfying the "missing image must not crash" requirement.
+     */
+    private fun addPhotoPreview(card: LinearLayout, item: AiRequestHistoryItem) {
+        item.imageLabel?.takeIf { it.isNotBlank() }?.let { label ->
+            card.addView(TextView(this).apply {
+                text = "Фото: ${shorten(label, MAX_QUESTION_CHARS)}"
+                textSize = 13f
+                setTextColor(Color.parseColor("#9AA0A6"))
+                setPadding(0, dp(6), 0, 0)
+            })
+        }
+
+        val uriString = item.imageUri?.takeIf { it.isNotBlank() } ?: return
+        val uri = runCatching { Uri.parse(uriString) }.getOrNull() ?: return
+
+        val previewSize = dp(PREVIEW_SIZE_DP)
+        val preview = ImageView(this).apply {
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            // Hidden until a bitmap is ready, so a failed/slow decode shows nothing at all.
+            visibility = View.GONE
+            background = GradientDrawable().apply {
+                cornerRadius = dp(8).toFloat()
+                setColor(Color.parseColor("#101418"))
+            }
+            layoutParams = LinearLayout.LayoutParams(previewSize, previewSize).apply {
+                topMargin = dp(8)
+            }
+        }
+        card.addView(preview)
+
+        // Tag the target view with the request so a recycled/superseded decode is dropped.
+        preview.tag = uriString
+        previewExecutor.execute {
+            val bitmap = decodeThumbnail(uri, previewSize)
+            if (bitmap == null) return@execute
+            preview.post {
+                if (isDestroyed || isFinishing) return@post
+                if (preview.tag != uriString) return@post
+                preview.setImageBitmap(bitmap)
+                preview.visibility = View.VISIBLE
+            }
+        }
+    }
+
+    /**
+     * Best-effort, memory-bounded thumbnail decode. Uses inJustDecodeBounds to read the
+     * dimensions first and an inSampleSize so a large image is never fully loaded. Returns
+     * null on any problem (missing/revoked Uri, non-image, decode failure, OOM) instead of
+     * throwing, so callers can simply skip the preview.
+     */
+    private fun decodeThumbnail(uri: Uri, targetPx: Int): Bitmap? = runCatching {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, bounds)
+        } ?: return null
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+        val target = targetPx.coerceAtLeast(1)
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= target && bounds.outHeight / (sample * 2) >= target) {
+            sample *= 2
+        }
+
+        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+        contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, opts)
+        }
+    }.getOrNull()
+
     private fun formatTime(millis: Long): String =
         runCatching { timeFormat.format(Date(millis)) }.getOrElse { "—" }
 
@@ -241,5 +339,6 @@ class AiRequestHistoryActivity : AppCompatActivity() {
     private companion object {
         const val MAX_QUESTION_CHARS = 160
         const val MAX_ANSWER_CHARS = 240
+        const val PREVIEW_SIZE_DP = 72
     }
 }

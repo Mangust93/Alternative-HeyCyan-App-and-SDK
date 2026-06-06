@@ -189,9 +189,13 @@ class PhotoQuestionResponder(context: Context) {
 
     /**
      * Append one record to the shared local history. Deliberately stores only safe, small
-     * fields: never the API key and never the image bytes/base64 — [AiRequestHistoryItem.imageUri]
-     * is left null and only the picked image's display name is kept as a label. Any failure
-     * here is swallowed so history bookkeeping can never break the user-facing answer.
+     * fields: never the API key and never the image bytes/base64. Only a lightweight local
+     * reference to the picked image is kept — [AiRequestHistoryItem.imageUri] holds the
+     * content/file Uri string (no binary data) and [AiRequestHistoryItem.imageLabel] holds
+     * the display name. The history screen uses the Uri to show a small preview when the
+     * image is still readable, and degrades gracefully when it is not (the reference may
+     * point at content the system no longer grants us, e.g. after the picker grant expires).
+     * Any failure here is swallowed so history bookkeeping can never break the answer.
      */
     private fun recordHistory(
         request: Request,
@@ -211,9 +215,11 @@ class PhotoQuestionResponder(context: Context) {
                     answer = answer,
                     modelId = modelId,
                     provider = provider,
-                    // Never persist the content Uri or any image bytes; a human-readable
-                    // label (the picked file name) is enough and carries no binary data.
-                    imageUri = null,
+                    // Store only a lightweight local reference (the picked image's Uri
+                    // string) plus its display name — never image bytes or base64. The
+                    // history screen tries to render a small preview from this and falls
+                    // back silently when the reference is no longer readable.
+                    imageUri = request.imageUri.toString().ifBlank { null },
                     imageLabel = request.imageName.ifBlank { null },
                     status = status,
                     errorMessage = errorMessage,
