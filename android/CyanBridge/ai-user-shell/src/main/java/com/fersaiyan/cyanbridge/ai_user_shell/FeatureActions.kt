@@ -33,4 +33,13 @@ internal object FeatureActions {
      */
     const val AI_HISTORY =
         "com.fersaiyan.cyanbridge.feature.AI_HISTORY"
+
+    /**
+     * Internal marker for the automation card. Like settings and history, the automation
+     * screen lives in this module and is launched with an explicit Activity intent, so no
+     * manifest action is exposed (the activity stays android:exported="false"). It is a
+     * UI-only placeholder shell: no executor, no background service, no permissions.
+     */
+    const val AUTOMATION =
+        "com.fersaiyan.cyanbridge.feature.AUTOMATION"
 }

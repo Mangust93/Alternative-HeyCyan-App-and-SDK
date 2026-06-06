@@ -68,6 +68,21 @@
             android:name="com.fersaiyan.cyanbridge.ai_user_shell.AiRequestHistoryActivity"
             android:exported="false"
             android:label="История запросов" />
+
+        <!--
+            Automation core UI shell ("Автоматизация") (Module B). A weakly-coupled,
+            UI-only entry point for a future Tasker/plugin replacement. It only lists the
+            planned automation categories: it runs NO automation, hosts NO background
+            service, no AccessibilityService hook, declares no permissions and does no
+            networking or storage.
+
+            Opened by AiUserShellActivity (same module) with an explicit internal Activity
+            Intent. Non-exported so external apps cannot open the screen.
+        -->
+        <activity
+            android:name="com.fersaiyan.cyanbridge.ai_user_shell.AutomationShellActivity"
+            android:exported="false"
+            android:label="Автоматизация" />
     </application>
 
 </manifest>

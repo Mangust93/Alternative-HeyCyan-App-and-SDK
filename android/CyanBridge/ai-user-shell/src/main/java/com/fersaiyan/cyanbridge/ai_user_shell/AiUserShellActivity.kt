@@ -65,6 +65,11 @@ class AiUserShellActivity : AppCompatActivity() {
             description = "OpenRouter API key и модель",
             action = FeatureActions.AI_SETTINGS,
         ),
+        Card(
+            title = "Автоматизация",
+            description = "Сценарии автоматизации (заготовка)",
+            action = FeatureActions.AUTOMATION,
+        ),
     )
 
     private lateinit var cardsContainer: LinearLayout
@@ -200,12 +205,15 @@ class AiUserShellActivity : AppCompatActivity() {
      * an explicit Activity intent, are always available, and need no resolveActivity check.
      */
     private fun isInternalAction(action: String): Boolean =
-        action == FeatureActions.AI_SETTINGS || action == FeatureActions.AI_HISTORY
+        action == FeatureActions.AI_SETTINGS ||
+            action == FeatureActions.AI_HISTORY ||
+            action == FeatureActions.AUTOMATION
 
     private fun featureIntent(action: String): Intent =
         when (action) {
             FeatureActions.AI_SETTINGS -> Intent(this, AiSettingsActivity::class.java)
             FeatureActions.AI_HISTORY -> Intent(this, AiRequestHistoryActivity::class.java)
+            FeatureActions.AUTOMATION -> Intent(this, AutomationShellActivity::class.java)
             else -> Intent(action)
                 .setPackage(packageName)
                 .addCategory(Intent.CATEGORY_DEFAULT)
