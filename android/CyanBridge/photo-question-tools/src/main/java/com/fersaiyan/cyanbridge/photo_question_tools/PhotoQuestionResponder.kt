@@ -70,15 +70,37 @@ class PhotoQuestionResponder(context: Context) {
      * Submit [request]. [onResult] is always called on the main thread, exactly once,
      * unless the request was cancelled/superseded before it finished. The result string is
      * either the answer or a user-readable error message — callers just display it.
+     *
+     * A [AiRequestHistoryStatus.PENDING] history item is written synchronously here, the
+     * moment the request is submitted, so it is visible in history immediately and survives
+     * the app being closed mid-request (when [shutdown] would otherwise drop the background
+     * task before it could record anything). The background work then replaces that same
+     * record (matched by [historyId]) with the terminal SUCCESS / ERROR / CONFIG_MISSING.
      */
     fun respond(request: Request, onResult: (String) -> Unit) {
         val requestGeneration = generation
+        val historyId = UUID.randomUUID().toString()
+        recordHistory(
+            id = historyId,
+            request = request,
+            status = AiRequestHistoryStatus.PENDING,
+            answer = null,
+            modelId = null,
+            provider = pendingProvider(),
+            errorMessage = null,
+        )
         executor.execute {
-            val answer = computeAnswer(request)
+            val answer = computeAnswer(request, historyId)
             mainHandler.post {
                 if (requestGeneration == generation) onResult(answer)
             }
         }
+    }
+
+    /** Provider label for the not-yet-resolved PENDING record, based on the current mode. */
+    private fun pendingProvider(): String = when (settings.mode) {
+        PhotoQuestionSettings.Mode.MOCK -> PROVIDER_MOCK
+        PhotoQuestionSettings.Mode.OPENROUTER_DIRECT -> PROVIDER_OPENROUTER
     }
 
     /** Drop any in-flight result without tearing down the executor. */
@@ -92,11 +114,12 @@ class PhotoQuestionResponder(context: Context) {
         executor.shutdownNow()
     }
 
-    private fun computeAnswer(request: Request): String = when (settings.mode) {
+    private fun computeAnswer(request: Request, historyId: String): String = when (settings.mode) {
         PhotoQuestionSettings.Mode.MOCK -> {
             runCatching { Thread.sleep(SIMULATED_LATENCY_MS) }
             val answer = computePlaceholderAnswer(request)
             recordHistory(
+                id = historyId,
                 request = request,
                 status = AiRequestHistoryStatus.SUCCESS,
                 answer = answer,
@@ -106,10 +129,10 @@ class PhotoQuestionResponder(context: Context) {
             )
             answer
         }
-        PhotoQuestionSettings.Mode.OPENROUTER_DIRECT -> computeOpenRouterAnswer(request)
+        PhotoQuestionSettings.Mode.OPENROUTER_DIRECT -> computeOpenRouterAnswer(request, historyId)
     }
 
-    private fun computeOpenRouterAnswer(request: Request): String {
+    private fun computeOpenRouterAnswer(request: Request, historyId: String): String {
         // Key and model come from the shared :ai-config store. No key => do not build or
         // send any OpenRouter request; surface a message pointing at "Настройки AI" and
         // record a CONFIG_MISSING entry (the key itself is never written to history).
@@ -117,6 +140,7 @@ class PhotoQuestionResponder(context: Context) {
         if (apiKey.isEmpty()) {
             val message = "Добавьте OpenRouter API key в Настройки AI"
             recordHistory(
+                id = historyId,
                 request = request,
                 status = AiRequestHistoryStatus.CONFIG_MISSING,
                 answer = null,
@@ -137,6 +161,7 @@ class PhotoQuestionResponder(context: Context) {
                     else -> "Не удалось прочитать фото: ${error.message ?: "неизвестная ошибка"}"
                 }
                 recordHistory(
+                    id = historyId,
                     request = request,
                     status = AiRequestHistoryStatus.ERROR,
                     answer = null,
@@ -160,6 +185,7 @@ class PhotoQuestionResponder(context: Context) {
         }.fold(
             onSuccess = { answer ->
                 recordHistory(
+                    id = historyId,
                     request = request,
                     status = AiRequestHistoryStatus.SUCCESS,
                     answer = answer,
@@ -175,6 +201,7 @@ class PhotoQuestionResponder(context: Context) {
                     else -> "Не удалось выполнить запрос к OpenRouter."
                 }
                 recordHistory(
+                    id = historyId,
                     request = request,
                     status = AiRequestHistoryStatus.ERROR,
                     answer = null,
@@ -196,8 +223,14 @@ class PhotoQuestionResponder(context: Context) {
      * image is still readable, and degrades gracefully when it is not (the reference may
      * point at content the system no longer grants us, e.g. after the picker grant expires).
      * Any failure here is swallowed so history bookkeeping can never break the answer.
+     *
+     * [id] is the stable record id for one user request: the submit-time PENDING write and
+     * the later terminal write share it, so [AiRequestHistoryStore.saveHistoryItem] replaces
+     * the pending record in place (it removes any existing entry with the same id and re-adds
+     * it at the front) rather than leaving a duplicate.
      */
     private fun recordHistory(
+        id: String,
         request: Request,
         status: AiRequestHistoryStatus,
         answer: String?,
@@ -208,7 +241,7 @@ class PhotoQuestionResponder(context: Context) {
         runCatching {
             historyStore.saveHistoryItem(
                 AiRequestHistoryItem(
-                    id = UUID.randomUUID().toString(),
+                    id = id,
                     timestampMillis = System.currentTimeMillis(),
                     featureType = AiRequestHistoryFeatureType.PHOTO_QUESTION,
                     question = request.question,

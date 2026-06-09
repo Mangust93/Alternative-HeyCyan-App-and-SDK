@@ -317,6 +317,7 @@ class AiRequestHistoryActivity : AppCompatActivity() {
     }
 
     private fun statusLabel(status: AiRequestHistoryStatus): String = when (status) {
+        AiRequestHistoryStatus.PENDING -> "Выполняется…"
         AiRequestHistoryStatus.SUCCESS -> "Успешно"
         AiRequestHistoryStatus.ERROR -> "Ошибка"
         AiRequestHistoryStatus.CANCELLED -> "Отменено"
@@ -324,6 +325,7 @@ class AiRequestHistoryActivity : AppCompatActivity() {
     }
 
     private fun statusColor(status: AiRequestHistoryStatus): Int = when (status) {
+        AiRequestHistoryStatus.PENDING -> Color.parseColor("#7AA7FF")
         AiRequestHistoryStatus.SUCCESS -> Color.parseColor("#21D0C3")
         AiRequestHistoryStatus.ERROR -> Color.parseColor("#FF6B6B")
         AiRequestHistoryStatus.CONFIG_MISSING -> Color.parseColor("#FFB347")
