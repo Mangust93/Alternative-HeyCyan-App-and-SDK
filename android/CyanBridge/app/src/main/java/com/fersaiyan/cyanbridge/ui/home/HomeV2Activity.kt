@@ -1,209 +1,177 @@
 package com.fersaiyan.cyanbridge.ui.home
 
-import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+import android.widget.FrameLayout
 import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.fersaiyan.cyanbridge.MainActivity
-import com.fersaiyan.cyanbridge.ui.tools.FeatureIntents
+import com.fersaiyan.cyanbridge.ui.home.v2.AiScreen
+import com.fersaiyan.cyanbridge.ui.home.v2.AutomationScreen
+import com.fersaiyan.cyanbridge.ui.home.v2.GalleryScreen
+import com.fersaiyan.cyanbridge.ui.home.v2.GlassesScreen
+import com.fersaiyan.cyanbridge.ui.home.v2.ProfileScreen
+import com.fersaiyan.cyanbridge.ui.home.v2.V2Theme
+import com.fersaiyan.cyanbridge.ui.home.v2.addPressFeedback
+import com.fersaiyan.cyanbridge.ui.home.v2.v2dp
 
 /**
- * CyanBridge Home Screen V2 — the new product home (Module E).
+ * CyanBridge V2 product shell (Module F).
  *
- * This is the main, user-facing entry point of the app. It replaces the old habit of
- * dropping the user straight into the device/diagnostics screen ([MainActivity]) and
- * instead presents large, touch-friendly cards for each product area.
+ * This is the app's main, user-facing home. It hosts the five-tab product navigation
+ * (Очки / AI / Галерея / Автоматизация / Профиль) with a custom dark-premium bottom bar and a
+ * content area that fades between screens. Each tab's content is built lazily on first visit by
+ * a dedicated screen class in [com.fersaiyan.cyanbridge.ui.home.v2].
  *
- * Design goals / constraints:
- *  - It is weakly coupled. Existing feature screens that live in optional feature modules
- *    (translator, photo-question) are opened only through package-scoped Intent actions
- *    checked with resolveActivity first, so a toggled-out module degrades to a Toast
- *    instead of crashing. It never references those modules' classes.
- *  - It does NOT change device sync/search. The "Синхронизация устройств" card simply
- *    opens the existing, working [MainActivity] flow unchanged.
- *  - New lightweight screens (quick note, transcription shell, Telegram share, plugins
- *    catalog, unified history landing) live in this same module as plain Activities.
- *
- * The screen is dark-styled to match the existing AI shell and built programmatically to
- * stay lightweight (no new layout/resource wiring).
+ * Constraints honoured:
+ *  - Native Android views only, no fragments and no heavy animation library — just the
+ *    framework's own `animate()` for the fade-in and card press feedback.
+ *  - Device sync/search is untouched: the Очки tab opens the existing MainActivity flow.
+ *  - The legacy "Чаты / Записи / Community Plugins" surfaces no longer dominate: they are not
+ *    part of this product navigation (they remain reachable only inside the device screen).
  */
 class HomeV2Activity : AppCompatActivity() {
 
-    /** One home card. [launch] performs the navigation when the whole card is tapped. */
-    private data class HomeCard(
-        val title: String,
-        val description: String,
-        val launch: () -> Unit,
-    )
-
-    private val density: Float by lazy { resources.displayMetrics.density }
-
-    private val cards: List<HomeCard> by lazy {
-        listOf(
-            HomeCard(
-                title = "Синхронизация устройств",
-                description = "Поиск, подключение и синхронизация очков",
-                launch = { openDeviceSync() },
-            ),
-            HomeCard(
-                title = "Переводчик",
-                description = "Перевод речи с озвучиванием в очки",
-                launch = { openFeatureAction(FeatureIntents.CONVERSATION_TRANSLATION) },
-            ),
-            HomeCard(
-                title = "Фото и вопрос",
-                description = "Выберите фото и задайте вопрос AI",
-                launch = { openFeatureAction(FeatureIntents.PHOTO_QUESTION) },
-            ),
-            HomeCard(
-                title = "Транскрибация",
-                description = "Аудио → текст, видео → аудио, видео → текст",
-                launch = { openLocal(TranscriptionPlaceholderActivity::class.java) },
-            ),
-            HomeCard(
-                title = "Быстрая заметка",
-                description = "Быстро сохранить текстовую заметку на телефоне",
-                launch = { openLocal(QuickNoteActivity::class.java) },
-            ),
-            HomeCard(
-                title = "История / Галерея",
-                description = "История AI-запросов и будущая единая галерея",
-                launch = { openLocal(HistoryGalleryActivity::class.java) },
-            ),
-            HomeCard(
-                title = "Telegram",
-                description = "Отправить текст через системный обмен в Telegram",
-                launch = { openLocal(TelegramShareActivity::class.java) },
-            ),
-            HomeCard(
-                title = "Плагины",
-                description = "Каталог автоматизаций и интеграций (заготовка)",
-                launch = { openLocal(PluginsCatalogActivity::class.java) },
-            ),
-        )
+    private enum class Tab(val label: String) {
+        GLASSES("Очки"),
+        AI("AI"),
+        GALLERY("Галерея"),
+        AUTOMATION("Авто"),
+        PROFILE("Профиль"),
     }
+
+    private lateinit var contentContainer: FrameLayout
+    private val tabButtons = mutableMapOf<Tab, LinearLayout>()
+    private val builtScreens = mutableMapOf<Tab, View>()
+    private var currentTab: Tab? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         title = "CyanBridge"
 
-        val pad = dp(16)
-
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(pad, pad, pad, pad)
-            setBackgroundColor(Color.parseColor("#101418"))
+            setBackgroundColor(V2Theme.BG)
+            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT)
         }
 
-        root.addView(TextView(this).apply {
-            text = "CyanBridge"
-            textSize = 24f
-            setTextColor(Color.WHITE)
-            setTypeface(typeface, Typeface.BOLD)
-        })
-        root.addView(TextView(this).apply {
-            text = "Главный экран — выберите раздел"
-            textSize = 13f
-            setTextColor(Color.parseColor("#9AA0A6"))
-            setPadding(0, dp(4), 0, dp(12))
-        })
-
-        val cardsContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
-        }
-        cards.forEach { cardsContainer.addView(buildCardView(it)) }
-
-        val scroll = ScrollView(this).apply {
+        contentContainer = FrameLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f)
-            isFillViewport = true
-            addView(cardsContainer)
         }
-        root.addView(scroll)
+        root.addView(contentContainer)
+        root.addView(buildBottomNav())
 
         setContentView(root)
+
+        selectTab(Tab.GLASSES)
     }
 
-    private fun buildCardView(card: HomeCard): View {
-        val cardLayout = LinearLayout(this).apply {
+    private fun buildBottomNav(): View {
+        val nav = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setBackgroundColor(V2Theme.SURFACE)
+            setPadding(v2dp(6), v2dp(6), v2dp(6), v2dp(6))
+            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+        }
+        // Thin top divider to separate the bar from content.
+        nav.background = GradientDrawable().apply {
+            setColor(V2Theme.SURFACE)
+            setStroke(v2dp(1), V2Theme.CARD_STROKE)
+        }
+
+        Tab.values().forEach { tab ->
+            val button = buildTabButton(tab)
+            tabButtons[tab] = button
+            nav.addView(button)
+        }
+        return nav
+    }
+
+    private fun buildTabButton(tab: Tab): LinearLayout {
+        val button = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(20), dp(20), dp(20))
-            background = GradientDrawable().apply {
-                cornerRadius = dp(14).toFloat()
-                setColor(Color.parseColor("#1B2026"))
-            }
-            layoutParams = LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply {
-                bottomMargin = dp(14)
-            }
+            gravity = Gravity.CENTER
+            setPadding(v2dp(4), v2dp(10), v2dp(4), v2dp(10))
+            layoutParams = LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f)
             isClickable = true
             isFocusable = true
-            setOnClickListener { runCatching { card.launch() } }
+            addPressFeedback()
+            setOnClickListener { selectTab(tab) }
         }
-
-        cardLayout.addView(TextView(this).apply {
-            text = card.title
-            textSize = 18f
-            setTextColor(Color.WHITE)
+        // Accent indicator bar above the label, shown only for the active tab.
+        button.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(v2dp(22), v2dp(3)).apply {
+                bottomMargin = v2dp(6)
+            }
+            background = GradientDrawable().apply {
+                cornerRadius = v2dp(2).toFloat()
+                setColor(Color.TRANSPARENT)
+            }
+            tag = INDICATOR_TAG
+        })
+        button.addView(TextView(this).apply {
+            text = tab.label
+            textSize = 12f
+            setTextColor(V2Theme.TEXT_SECONDARY)
             setTypeface(typeface, Typeface.BOLD)
+            tag = LABEL_TAG
         })
-        cardLayout.addView(TextView(this).apply {
-            text = card.description
-            textSize = 13f
-            setTextColor(Color.parseColor("#9AA0A6"))
-            setPadding(0, dp(6), 0, 0)
-        })
-        return cardLayout
+        return button
     }
 
-    /** Opens the existing, working device sync/search screen unchanged. */
-    private fun openDeviceSync() {
-        runCatching { startActivity(Intent(this, MainActivity::class.java)) }
-            .onFailure { Toast.makeText(this, "Не удалось открыть раздел", Toast.LENGTH_SHORT).show() }
-    }
+    private fun selectTab(tab: Tab) {
+        if (tab == currentTab) return
+        currentTab = tab
 
-    private fun openLocal(target: Class<*>) {
-        runCatching { startActivity(Intent(this, target)) }
-            .onFailure { Toast.makeText(this, "Не удалось открыть раздел", Toast.LENGTH_SHORT).show() }
-    }
-
-    /**
-     * Opens a feature screen that lives in an optional feature module, via a package-scoped
-     * Intent action only. Checks resolveActivity first so the screen degrades gracefully to
-     * a Toast when the module is toggled out of the build.
-     */
-    private fun openFeatureAction(action: String) {
-        val intent = Intent(action)
-            .setPackage(packageName)
-            .addCategory(Intent.CATEGORY_DEFAULT)
-        if (!resolveFeatureActivity(intent)) {
-            Toast.makeText(this, "Модуль не включён", Toast.LENGTH_SHORT).show()
-            return
-        }
-        runCatching { startActivity(intent) }
-            .onFailure { Toast.makeText(this, "Не удалось открыть функцию", Toast.LENGTH_SHORT).show() }
-    }
-
-    private fun resolveFeatureActivity(intent: Intent): Boolean =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            packageManager.resolveActivity(
-                intent,
-                PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()),
-            ) != null
-        } else {
-            @Suppress("DEPRECATION")
-            packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY) != null
+        // Update bottom-bar selection state.
+        tabButtons.forEach { (t, button) ->
+            val active = t == tab
+            (button.findViewWithTag<View>(INDICATOR_TAG))?.background = GradientDrawable().apply {
+                cornerRadius = v2dp(2).toFloat()
+                setColor(if (active) V2Theme.ACCENT else Color.TRANSPARENT)
+            }
+            (button.findViewWithTag<TextView>(LABEL_TAG))?.setTextColor(
+                if (active) V2Theme.ACCENT else V2Theme.TEXT_SECONDARY
+            )
         }
 
-    private fun dp(value: Int): Int = (value * density).toInt()
+        // Swap content, building each screen lazily on first visit, with a light fade-in.
+        val screen = builtScreens.getOrPut(tab) { buildScreen(tab) }
+        contentContainer.removeAllViews()
+        contentContainer.addView(screen)
+        screen.alpha = 0f
+        screen.animate().alpha(1f).setDuration(180).start()
+    }
+
+    private fun buildScreen(tab: Tab): View = when (tab) {
+        Tab.GLASSES -> GlassesScreen(this).build()
+        Tab.AI -> AiScreen(this).build()
+        Tab.GALLERY -> GalleryScreen(this).build()
+        Tab.AUTOMATION -> AutomationScreen(this).build()
+        Tab.PROFILE -> ProfileScreen(this).build()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The Очки status card reflects live connection state; rebuild it on return so a
+        // connect/disconnect that happened in the device screen is reflected here.
+        builtScreens.remove(Tab.GLASSES)
+        if (currentTab == Tab.GLASSES) {
+            val fresh = buildScreen(Tab.GLASSES)
+            builtScreens[Tab.GLASSES] = fresh
+            contentContainer.removeAllViews()
+            contentContainer.addView(fresh)
+        }
+    }
+
+    private companion object {
+        const val INDICATOR_TAG = "v2_tab_indicator"
+        const val LABEL_TAG = "v2_tab_label"
+    }
 }
