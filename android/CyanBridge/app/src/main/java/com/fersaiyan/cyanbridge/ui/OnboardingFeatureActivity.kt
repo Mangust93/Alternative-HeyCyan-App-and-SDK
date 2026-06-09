@@ -7,8 +7,8 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.fersaiyan.cyanbridge.MainActivity
 import com.fersaiyan.cyanbridge.R
+import com.fersaiyan.cyanbridge.ui.home.HomeV2Activity
 import com.fersaiyan.cyanbridge.agent.LocalAgentPrefs as AgentPrefs
 import com.fersaiyan.cyanbridge.localagent.daily.DailyFactsReminderScheduler
 import com.fersaiyan.cyanbridge.localagent.memory.LocalAgentMemoryStore
@@ -133,7 +133,8 @@ class OnboardingFeatureActivity : AppCompatActivity() {
             .putBoolean("onboarding_completed", true)
             .apply()
 
-        startActivity(Intent(this, MainActivity::class.java).apply {
+        // Navigation reframe (Module E): finish onboarding into the product Home Screen V2.
+        startActivity(Intent(this, HomeV2Activity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         })
         finish()
@@ -145,7 +146,8 @@ class OnboardingFeatureActivity : AppCompatActivity() {
             .putBoolean("onboarding_completed", true)
             .apply()
 
-        startActivity(Intent(this, MainActivity::class.java).apply {
+        // Navigation reframe (Module E): skip onboarding into the product Home Screen V2.
+        startActivity(Intent(this, HomeV2Activity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         })
         finish()

@@ -120,6 +120,37 @@
             android:exported="false"
             android:label="Community Plugins" />
 
+        <!--
+            Home Screen V2 + new lightweight section screens (Module E). All non-exported:
+            they are reached only from within the app. None touches the SDK, BLE, P2P or the
+            device sync internals — the "Синхронизация устройств" card just opens the existing
+            MainActivity flow unchanged.
+        -->
+        <activity
+            android:name=".ui.home.HomeV2Activity"
+            android:exported="false"
+            android:label="CyanBridge" />
+        <activity
+            android:name=".ui.home.TranscriptionPlaceholderActivity"
+            android:exported="false"
+            android:label="Транскрибация" />
+        <activity
+            android:name=".ui.home.QuickNoteActivity"
+            android:exported="false"
+            android:label="Быстрая заметка" />
+        <activity
+            android:name=".ui.home.HistoryGalleryActivity"
+            android:exported="false"
+            android:label="История / Галерея" />
+        <activity
+            android:name=".ui.home.TelegramShareActivity"
+            android:exported="false"
+            android:label="Telegram" />
+        <activity
+            android:name=".ui.home.PluginsCatalogActivity"
+            android:exported="false"
+            android:label="Плагины" />
+
         <activity
             android:name=".ui.tools.ToolsActivity"
             android:exported="false"

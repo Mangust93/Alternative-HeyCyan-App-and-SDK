@@ -5,8 +5,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import com.fersaiyan.cyanbridge.MainActivity
 import com.fersaiyan.cyanbridge.R
+import com.fersaiyan.cyanbridge.ui.home.HomeV2Activity
 
 class WelcomeActivity : AppCompatActivity() {
 
@@ -14,7 +14,10 @@ class WelcomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         if (isOnboardingCompleted()) {
-            startActivity(Intent(this, MainActivity::class.java))
+            // Navigation reframe (Module E): land on the product Home Screen V2 instead of
+            // dropping straight into the device sync/diagnostics screen. Device sync is still
+            // reachable from Home's "Синхронизация устройств" card (the unchanged MainActivity).
+            startActivity(Intent(this, HomeV2Activity::class.java))
             finish()
             return
         }
