@@ -43,6 +43,7 @@ import com.oudmon.ble.base.communication.bigData.resp.GlassesDeviceNotifyListene
 import com.oudmon.ble.base.communication.bigData.resp.GlassesDeviceNotifyRsp
 import com.fersaiyan.cyanbridge.databinding.AcitivytMainBinding
 import com.fersaiyan.cyanbridge.ui.DeviceBindActivity
+import com.fersaiyan.cyanbridge.ui.DeviceSearchPermissionGuard
 import com.fersaiyan.cyanbridge.ui.ChatListActivity
 import com.fersaiyan.cyanbridge.ui.ChatThreadActivity
 import com.fersaiyan.cyanbridge.ui.CommunityPluginPrefs
@@ -618,7 +619,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 }
 
                 binding.btnScan -> {
-                    requestLocationPermission(this@MainActivity, PermissionCallback())
+                    // Module C — guard the search so missing BLE permissions can't crash the scan.
+                    DeviceSearchPermissionGuard.ensure(this@MainActivity) {
+                        requestLocationPermission(this@MainActivity, PermissionCallback())
+                    }
                 }
 
                 binding.btnConnect -> {
