@@ -151,6 +151,16 @@
             android:exported="false"
             android:label="Плагины" />
 
+        <!--
+            Module G — Automation Hub runtime. A single parameterized editor/runner for the
+            local automation actions (HTTP / Webhook / Intent / Open App / Open Settings / Share).
+            Non-exported; reached only from the "Авто" tab. No SDK/BLE/P2P/device-sync internals.
+        -->
+        <activity
+            android:name=".automation.runtime.AutomationActionEditorActivity"
+            android:exported="false"
+            android:label="Автоматизация" />
+
         <activity
             android:name=".ui.tools.ToolsActivity"
             android:exported="false"

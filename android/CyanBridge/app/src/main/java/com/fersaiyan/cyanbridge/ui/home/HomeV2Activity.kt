@@ -159,12 +159,15 @@ class HomeV2Activity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // The Очки status card reflects live connection state; rebuild it on return so a
-        // connect/disconnect that happened in the device screen is reflected here.
+        // Rebuild stateful tabs on return so live changes are reflected:
+        //  - Очки: connection state changed in the device screen.
+        //  - Авто: a new action may have been saved in the automation editor ("Мои действия").
         builtScreens.remove(Tab.GLASSES)
-        if (currentTab == Tab.GLASSES) {
-            val fresh = buildScreen(Tab.GLASSES)
-            builtScreens[Tab.GLASSES] = fresh
+        builtScreens.remove(Tab.AUTOMATION)
+        val tab = currentTab
+        if (tab == Tab.GLASSES || tab == Tab.AUTOMATION) {
+            val fresh = buildScreen(tab)
+            builtScreens[tab] = fresh
             contentContainer.removeAllViews()
             contentContainer.addView(fresh)
         }
