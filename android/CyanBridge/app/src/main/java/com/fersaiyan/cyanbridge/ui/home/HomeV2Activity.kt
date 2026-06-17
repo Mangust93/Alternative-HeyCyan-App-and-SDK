@@ -16,7 +16,7 @@ import com.fersaiyan.cyanbridge.ui.home.v2.AiScreen
 import com.fersaiyan.cyanbridge.ui.home.v2.AutomationScreen
 import com.fersaiyan.cyanbridge.ui.home.v2.GalleryScreen
 import com.fersaiyan.cyanbridge.ui.home.v2.GlassesScreen
-import com.fersaiyan.cyanbridge.ui.home.v2.ProfileScreen
+import com.fersaiyan.cyanbridge.ui.home.v2.TranslationScreen
 import com.fersaiyan.cyanbridge.ui.home.v2.V2Theme
 import com.fersaiyan.cyanbridge.ui.home.v2.addPressFeedback
 import com.fersaiyan.cyanbridge.ui.home.v2.v2dp
@@ -25,7 +25,7 @@ import com.fersaiyan.cyanbridge.ui.home.v2.v2dp
  * CyanBridge V2 product shell (Module F).
  *
  * This is the app's main, user-facing home. It hosts the five-tab product navigation
- * (Очки / AI / Галерея / Автоматизация / Профиль) with a custom dark-premium bottom bar and a
+ * (Главная / Перевод / AI / Галерея / Автоматизация) with a custom dark-premium bottom bar and a
  * content area that fades between screens. Each tab's content is built lazily on first visit by
  * a dedicated screen class in [com.fersaiyan.cyanbridge.ui.home.v2].
  *
@@ -39,11 +39,11 @@ import com.fersaiyan.cyanbridge.ui.home.v2.v2dp
 class HomeV2Activity : AppCompatActivity() {
 
     private enum class Tab(val label: String) {
-        GLASSES("Очки"),
+        GLASSES("Главная"),
+        TRANSLATION("Перевод"),
         AI("AI"),
         GALLERY("Галерея"),
         AUTOMATION("Авто"),
-        PROFILE("Профиль"),
     }
 
     private lateinit var contentContainer: FrameLayout
@@ -151,10 +151,10 @@ class HomeV2Activity : AppCompatActivity() {
 
     private fun buildScreen(tab: Tab): View = when (tab) {
         Tab.GLASSES -> GlassesScreen(this).build()
+        Tab.TRANSLATION -> TranslationScreen(this).build()
         Tab.AI -> AiScreen(this).build()
         Tab.GALLERY -> GalleryScreen(this).build()
         Tab.AUTOMATION -> AutomationScreen(this).build()
-        Tab.PROFILE -> ProfileScreen(this).build()
     }
 
     override fun onResume() {

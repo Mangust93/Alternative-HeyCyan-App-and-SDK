@@ -6,16 +6,14 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import androidx.appcompat.app.AppCompatActivity
 import com.fersaiyan.cyanbridge.ui.home.QuickNoteActivity
-import com.fersaiyan.cyanbridge.ui.home.TranscriptionPlaceholderActivity
 import com.fersaiyan.cyanbridge.ui.tools.FeatureIntents
 
 /**
  * AI — hub for the on-glasses/phone AI features (Module F).
  *
- * Presents the four AI features as large hero cards. Existing entry points are reused exactly:
- *  - Переводчик and Фото и вопрос open their optional feature modules through package-scoped
- *    Intent actions (translator / photo-question logic is left untouched).
- *  - Транскрибация and Быстрая заметка open the existing lightweight in-app screens.
+ * Presents AI-first features as large hero cards. Translation and transcription are no longer
+ * mixed into this hub: translation belongs to its own product surface, while transcription is
+ * opened from Gallery / Audio / Recordings workflows.
  */
 class AiScreen(private val activity: AppCompatActivity) {
 
@@ -29,13 +27,13 @@ class AiScreen(private val activity: AppCompatActivity) {
         }
 
         column.addView(ctx.v2ScreenTitle("AI"))
-        column.addView(ctx.v2Subtitle("Перевод, вопросы по фото, расшифровка и заметки"))
+        column.addView(ctx.v2Subtitle("Чат, вопросы по фото, история AI и заметки"))
 
         column.addView(ctx.v2Card(
-            title = "Переводчик",
-            description = "Перевод речи с озвучиванием в очки",
+            title = "Чат с AI",
+            description = "Открыть основной AI-чат и Hermes/Life Agent сценарии",
             large = true,
-            onClick = { V2Nav.openFeature(activity, FeatureIntents.CONVERSATION_TRANSLATION) },
+            onClick = { V2Nav.openFeature(activity, FeatureIntents.AI_USER_SHELL) },
         ))
         column.addView(ctx.v2Card(
             title = "Фото и вопрос",
@@ -44,10 +42,10 @@ class AiScreen(private val activity: AppCompatActivity) {
             onClick = { V2Nav.openFeature(activity, FeatureIntents.PHOTO_QUESTION) },
         ))
         column.addView(ctx.v2Card(
-            title = "Транскрибация",
-            description = "Аудио → текст, видео → аудио, видео → текст",
+            title = "История AI",
+            description = "Последние вопросы, ответы и фото-запросы",
             large = true,
-            onClick = { V2Nav.openLocal(activity, TranscriptionPlaceholderActivity::class.java) },
+            onClick = { V2Nav.openFeature(activity, FeatureIntents.AI_USER_SHELL) },
         ))
         column.addView(ctx.v2Card(
             title = "Быстрая заметка",

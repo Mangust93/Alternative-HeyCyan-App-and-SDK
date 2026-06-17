@@ -12,14 +12,16 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.fersaiyan.cyanbridge.ui.recordings.RecordingsListActivity
+import com.fersaiyan.cyanbridge.ui.recordings.SyncedMediaGalleryActivity
 import com.fersaiyan.cyanbridge.ui.tools.FeatureIntents
 
 /**
  * Галерея — landing for the future unified Media Hub (Module F).
  *
- * Shows the planned media categories (Фото / Видео / Аудио / AI / Заметки) as filter chips
- * above a modern empty state. No real media sync is implemented here: tapping a category is a
- * no-op placeholder, except "AI", which reuses the existing AI request history when present.
+ * Shows the media categories (Фото / Видео / Аудио / Записи / AI / Заметки) as filter chips
+ * and routes the working media categories to the existing synced media and recordings screens.
+ * Transcription remains a full workflow opened from recordings/audio instead of a bottom tab.
  */
 class GalleryScreen(private val activity: AppCompatActivity) {
 
@@ -30,9 +32,10 @@ class GalleryScreen(private val activity: AppCompatActivity) {
         val pad = ctx.v2dp(16)
 
         val categories = listOf(
-            Category("Фото") { soon("Фото") },
-            Category("Видео") { soon("Видео") },
-            Category("Аудио") { soon("Аудио") },
+            Category("Фото") { V2Nav.openLocal(activity, SyncedMediaGalleryActivity::class.java) },
+            Category("Видео") { V2Nav.openLocal(activity, SyncedMediaGalleryActivity::class.java) },
+            Category("Аудио") { V2Nav.openLocal(activity, RecordingsListActivity::class.java) },
+            Category("Записи") { V2Nav.openLocal(activity, RecordingsListActivity::class.java) },
             Category("AI") {
                 V2Nav.openFeature(
                     activity,
